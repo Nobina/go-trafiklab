@@ -113,10 +113,10 @@ func NewClient(config *Config) *Client {
 		c.httpClient = http.DefaultClient
 	}
 	if c.apiKey == "" {
-		c.apiKey = os.Getenv("TRAFIKLAB_TRAVELPLANNER13_API_KEY")
+		c.apiKey = os.Getenv("TRAFIKLAB_TRAVELPLANNER_API_KEY")
 	}
 	if c.baseURL == "" {
-		c.baseURL = os.Getenv("TRAFIKLAB_TRAVELPLANNER31_BASE_URL")
+		c.baseURL = os.Getenv("TRAFIKLAB_TRAVELPLANNER_BASE_URL")
 		if c.baseURL == "" {
 			c.baseURL = "http://api.sl.se"
 		}
