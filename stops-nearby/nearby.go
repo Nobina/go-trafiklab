@@ -54,10 +54,11 @@ type LocationList struct {
 }
 
 type StopLocation struct {
-	Name     string  `xml:"name,attr"`
-	ID       string  `xml:"id,attr"`
-	ExtID    string  `xml:"extId,attr"`
-	Lat      float64 `xml:"lat,attr"`
-	Lon      float64 `xml:"lon,attr"`
-	Distance int     `xml:"dist,attr"`
+	Name          string  `xml:"name,attr"`
+	ID            string  `xml:"id,attr"`
+	ExtID         string  `xml:"extId,attr"`
+	MainMastExtID string  `xml:"mainMastExtId,attr"`
+	Lat           float64 `xml:"lat,attr"`
+	Lon           float64 `xml:"lon,attr"`
+	Distance      int     `xml:"dist,attr"`
 }
