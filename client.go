@@ -104,7 +104,9 @@ func (c *Client) doXML(config *apiConfig, apiReq apiRequest, v interface{}) (*ht
 }
 
 func NewClient(options ...ClientOption) (*Client, error) {
-	c := &Client{}
+	c := &Client{
+		apiKeys: map[string]string{},
+	}
 
 	if options != nil {
 		for _, option := range options {
