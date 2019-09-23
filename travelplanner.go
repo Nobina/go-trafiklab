@@ -61,7 +61,7 @@ type ReconstructionRequest struct {
 func (r ReconstructionRequest) body() (io.Reader, error) { return nil, nil }
 func (r ReconstructionRequest) params() url.Values {
 	params := url.Values{}
-	if r.key == "" {
+	if r.key != "" {
 		params.Set("key", r.key)
 	}
 	if r.Context != "" {
@@ -143,7 +143,7 @@ type TripsRequest struct {
 func (r TripsRequest) body() (io.Reader, error) { return nil, nil }
 func (r TripsRequest) params() url.Values {
 	params := url.Values{}
-	if r.key == "" {
+	if r.key != "" {
 		params.Set("key", r.key)
 	}
 	if r.Lang == "" {
