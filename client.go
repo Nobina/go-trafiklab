@@ -120,6 +120,9 @@ func NewClient(options ...ClientOption) (*Client, error) {
 		c.httpClient = http.DefaultClient
 	}
 
+  c.Stops = &Stops{c}
+  c.Travelplanner = &Travelplanner{c}
+
 	return c, nil
 }
 
