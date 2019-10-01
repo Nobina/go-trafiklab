@@ -20,6 +20,12 @@ var (
 		path:   "/api2/travelplannerv3_1/reconstruction.xml",
 		method: "GET",
 	}
+
+	travelplannerJourneyDetailAPI = &apiConfig{
+		host:   "http://api.sl.se",
+		path:   "/api2/travelplannerv3_1/journeydetail.xml",
+		method: "GET",
+	}
 )
 
 type Travelplanner struct {
@@ -40,6 +46,38 @@ const (
 var (
 	LocationEuropeStockholm, _ = time.LoadLocation("Europe/Stockholm")
 )
+
+func (c *Travelplanner) JourneyDetail(journeyDetailReq *JourneyDetailRequest) (*Leg, error) {
+	journeyDetailReq.key = c.common.apiKeys[keyTravelplanner]
+	legResp := &Leg{}
+	if _, err := c.common.doXML(travelplannerJourneyDetailAPI, journeyDetailReq, legResp); err != nil {
+		return nil, err
+	}
+
+	return legResp, nil
+}
+
+type JourneyDetailRequest struct {
+	key  string
+	ID   string
+	Poly bool
+}
+
+func (r JourneyDetailRequest) body() (io.Reader, error) { return nil, nil }
+func (r JourneyDetailRequest) params() url.Values {
+	params := url.Values{}
+	if r.key != "" {
+		params.Set("key", r.key)
+	}
+	if r.ID != "" {
+		params.Set("id", r.ID)
+	}
+  if r.Poly {
+    params.Set("poly", "1")
+  }
+
+	return params
+}
 
 func (c *Travelplanner) Reconstruction(ctx string) (*TripResp, error) {
 	tripResp := &TripResp{}
