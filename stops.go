@@ -22,7 +22,7 @@ type Stops struct {
 	common *Client
 }
 
-func (c *Stops) StopsQuery(queryReq *StopsQueryRequest) (*TypeaheadResponse, error) {
+func (c *Stops) Query(queryReq *StopsQueryRequest) (*TypeaheadResponse, error) {
 	queryReq.key = c.common.apiKeys[keyStopsQuery]
 	queryResp := &TypeaheadResponse{}
 	if _, err := c.common.doXML(stopsQueryAPI, queryReq, queryResp); err != nil {
