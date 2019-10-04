@@ -53,7 +53,7 @@ func (r StopsQueryRequest) params() url.Values {
 	if r.StationsOnly {
 		params.Set("StationsOnly", "True")
 	} else {
-    params.Set("StationsOnly": "False")
+    params.Set("StationsOnly", "False")
   }
 	if r.MaxResults != "" {
 		params.Set("MaxResults", r.MaxResults)
