@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 const (
@@ -20,6 +21,10 @@ const (
 
 var (
 	ErrMissingAPIKey = errors.New("missing api key")
+)
+
+var (
+	LocationEuropeStockholm, _ = time.LoadLocation("Europe/Stockholm")
 )
 
 type Client struct {
@@ -120,8 +125,8 @@ func NewClient(options ...ClientOption) (*Client, error) {
 		c.httpClient = http.DefaultClient
 	}
 
-  c.Stops = &Stops{c}
-  c.Travelplanner = &Travelplanner{c}
+	c.Stops = &Stops{c}
+	c.Travelplanner = &Travelplanner{c}
 
 	return c, nil
 }

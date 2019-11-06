@@ -43,10 +43,6 @@ const (
 	ProductRefCommute ProductRef = 128
 )
 
-var (
-	LocationEuropeStockholm, _ = time.LoadLocation("Europe/Stockholm")
-)
-
 func (c *Travelplanner) JourneyDetail(journeyDetailReq *JourneyDetailRequest) (*Leg, error) {
 	journeyDetailReq.key = c.common.apiKeys[keyTravelplanner]
 	legResp := &Leg{}
