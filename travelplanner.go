@@ -68,9 +68,9 @@ func (r JourneyDetailRequest) params() url.Values {
 	if r.ID != "" {
 		params.Set("id", r.ID)
 	}
-  if r.Poly {
-    params.Set("poly", "1")
-  }
+	if r.Poly {
+		params.Set("poly", "1")
+	}
 
 	return params
 }
@@ -159,11 +159,10 @@ type TripsRequest struct {
 	MaxChangeTime     string   `json:"max_change_time"`
 	AddChangeTime     string   `json:"add_change_time"`
 	MaxChange         string   `json:"max_change"`
-	Date              string   `json:"date"`
-	Time              string   `json:"time"`
-	SearchForArrival  bool     `json:"search_for_arrival"`
-	NumF              string   `json:"num_f"`
-	NumB              string   `json:"num_b"`
+	Time              time.Time
+	SearchForArrival  bool   `json:"search_for_arrival"`
+	NumF              string `json:"num_f"`
+	NumB              string `json:"num_b"`
 	Products          []ProductRef
 	AvoidProducts     []ProductRef
 	Lines             []string `json:"lines"`
@@ -239,11 +238,9 @@ func (r TripsRequest) params() url.Values {
 	if r.MaxChange != "" {
 		params.Set("maxChange", r.MaxChange)
 	}
-	if r.Date != "" {
-		params.Set("date", r.Date)
-	}
-	if r.Time != "" {
-		params.Set("time", r.Time)
+	if r.Time != (time.Time{}) {
+		params.Set("date", r.Time.In(LocationEuropeStockholm).Format("2006-01-02"))
+		params.Set("time", r.Time.In(LocationEuropeStockholm).Format("15:04"))
 	}
 	if r.SearchForArrival {
 		params.Set("searchForArrival", "1")
