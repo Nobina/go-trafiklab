@@ -16,6 +16,9 @@ var (
 )
 
 func (c *Client) TrafficStatus() (*TrafficStatusResponse, error) {
+  if c.apiKeys[keyTrafficStatus] == "" {
+    return nil, ErrMissingAPIKey
+  }
 	trafficStatusResp := &TrafficStatusResponse{}
 	resp, err := c.client.Do(
 		requester.WithPath("/api2/trafficsituation.xml"),

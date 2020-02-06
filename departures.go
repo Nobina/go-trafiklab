@@ -8,6 +8,9 @@ import (
 
 func (c *Client) Departures(req *DeparturesRequest) (*DepartureResponse, error) {
 	req.key = c.apiKeys[keyDepartures]
+  if req.key == "" {
+    return nil, ErrMissingAPIKey
+  }
 	departuresResp := &DepartureResponse{}
 	resp, err := c.client.Do(
 		requester.WithPath("/api2/realtimedeparturesV4.xml"),

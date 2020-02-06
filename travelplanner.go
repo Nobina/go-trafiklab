@@ -27,6 +27,9 @@ const (
 
 func (c *Travelplanner) JourneyDetail(req *JourneyDetailRequest) (*Leg, error) {
 	req.key = c.common.apiKeys[keyTravelplanner]
+	if req.key == "" {
+		return nil, ErrMissingAPIKey
+	}
 	legResp := &Leg{}
 	resp, err := c.common.client.Do(
 		requester.WithPath("/api2/travelplannerv3_1/journeydetail.xml"),
@@ -61,6 +64,9 @@ func (r JourneyDetailRequest) params() url.Values {
 }
 
 func (c *Travelplanner) Reconstruction(ctx string) (*TripResp, error) {
+	if c.common.apiKeys[keyTravelplanner] == "" {
+		return nil, ErrMissingAPIKey
+	}
 	tripResp := &TripResp{}
 	resp, err := c.common.client.Do(
 		requester.WithPath("/api2/travelplannerv3_1/reconstruction.xml"),
@@ -78,6 +84,9 @@ func (c *Travelplanner) Reconstruction(ctx string) (*TripResp, error) {
 
 func (c *Travelplanner) Trips(req *TripsRequest) (*TripsResp, error) {
 	req.key = c.common.apiKeys[keyTravelplanner]
+	if req.key == "" {
+		return nil, ErrMissingAPIKey
+	}
 	tripsResp := &TripsResp{}
 	resp, err := c.common.client.Do(
 		requester.WithPath("/api2/travelplannerv3_1/trip.xml"),

@@ -9,6 +9,9 @@ import (
 
 func (c *Client) Deviations(req *DeviationsRequest) (*DeviationsResponse, error) {
 	req.key = c.apiKeys[keyDeviations]
+  if req.key == "" {
+    return nil, ErrMissingAPIKey
+  }
 	deviationsResp := &DeviationsResponse{}
 	resp, err := c.client.Do(
 		requester.WithPath("/api2/deviationsrawdata.json"),

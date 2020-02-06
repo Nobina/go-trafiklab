@@ -12,6 +12,9 @@ type Stops struct {
 
 func (c *Stops) Query(req *StopsQueryRequest) (*TypeaheadResponse, error) {
 	req.key = c.common.apiKeys[keyStopsQuery]
+  if req.key == "" {
+    return nil, ErrMissingAPIKey
+  }
 	queryResp := &TypeaheadResponse{}
 	resp, err := c.common.client.Do(
 		requester.WithPath("/api2/typeahead.xml"),
@@ -72,6 +75,9 @@ type TypeaheadStop struct {
 
 func (c *Stops) Nearby(req *StopsNearbyRequest) (*LocationList, error) {
 	req.key = c.common.apiKeys[keyStopsNearby]
+  if req.key == "" {
+    return nil, ErrMissingAPIKey
+  }
 	nearbyResp := &LocationList{}
 	resp, err := c.common.client.Do(
 		requester.WithPath("/api2/nearbystopsv2.xml"),
