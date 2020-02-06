@@ -45,6 +45,7 @@ func NewClient(opts ...ClientOption) *Client {
 		defaultOptions: []requester.RequestOption{
 			requester.WithHost("http://api.sl.se"),
 		},
+		apiKeys: map[string]string{},
 	}
 
 	if opts != nil {
