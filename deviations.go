@@ -1,27 +1,24 @@
 package trafiklab
 
 import (
-	"io"
 	"net/url"
 	"time"
+
+  "github.com/nobina/go-requester"
 )
 
-var (
-	deviationsOverviewAPI = &apiConfig{
-		host:   "http://api.sl.se",
-		path:   "/api2/deviationsrawdata.json",
-		method: "GET",
-	}
-)
-
-func (c *Client) Deviations(deviationsReq *DeviationsRequest) (*DeviationsResponse, error) {
-	deviationsReq.key = c.apiKeys[keyDeviations]
+func (c *Client) Deviations(req *DeviationsRequest) (*DeviationsResponse, error) {
+	req.key = c.apiKeys[keyDeviations]
 	deviationsResp := &DeviationsResponse{}
-	if _, err := c.doJSON(deviationsOverviewAPI, deviationsReq, deviationsResp); err != nil {
+	resp, err := c.client.Do(
+		requester.WithPath("/api2/deviationsrawdata.json"),
+		requester.WithQuery(req.params()),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return deviationsResp, nil
+	return deviationsResp, resp.JSON(deviationsResp)
 }
 
 type DeviationsRequest struct {
@@ -34,7 +31,6 @@ type DeviationsRequest struct {
 	ToDate        string `json:"to_date"`
 }
 
-func (r DeviationsRequest) body() (io.Reader, error) { return nil, nil }
 func (r DeviationsRequest) params() url.Values {
 	params := url.Values{}
 	if r.key != "" {

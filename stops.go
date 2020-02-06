@@ -1,35 +1,27 @@
 package trafiklab
 
 import (
-	"io"
 	"net/url"
-)
 
-var (
-	stopsQueryAPI = &apiConfig{
-		host:   "http://api.sl.se",
-		path:   "/api2/typeahead.xml",
-		method: "GET",
-	}
-	stopsNearbyAPI = &apiConfig{
-		host:   "http://api.sl.se",
-		path:   "/api2/nearbystopsv2.xml",
-		method: "GET",
-	}
+	"github.com/nobina/go-requester"
 )
 
 type Stops struct {
 	common *Client
 }
 
-func (c *Stops) Query(queryReq *StopsQueryRequest) (*TypeaheadResponse, error) {
-	queryReq.key = c.common.apiKeys[keyStopsQuery]
+func (c *Stops) Query(req *StopsQueryRequest) (*TypeaheadResponse, error) {
+	req.key = c.common.apiKeys[keyStopsQuery]
 	queryResp := &TypeaheadResponse{}
-	if _, err := c.common.doXML(stopsQueryAPI, queryReq, queryResp); err != nil {
+	resp, err := c.common.client.Do(
+		requester.WithPath("/api2/typeahead.xml"),
+		requester.WithQuery(req.params()),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return queryResp, nil
+	return queryResp, resp.XML(queryResp)
 }
 
 type StopsQueryRequest struct {
@@ -41,7 +33,6 @@ type StopsQueryRequest struct {
 	Type         string
 }
 
-func (r StopsQueryRequest) body() (io.Reader, error) { return nil, nil }
 func (r StopsQueryRequest) params() url.Values {
 	params := url.Values{}
 	if r.key != "" {
@@ -53,8 +44,8 @@ func (r StopsQueryRequest) params() url.Values {
 	if r.StationsOnly {
 		params.Set("StationsOnly", "True")
 	} else {
-    params.Set("StationsOnly", "False")
-  }
+		params.Set("StationsOnly", "False")
+	}
 	if r.MaxResults != "" {
 		params.Set("MaxResults", r.MaxResults)
 	}
@@ -79,14 +70,18 @@ type TypeaheadStop struct {
 	Y      string `json:"y"`
 }
 
-func (c *Stops) Nearby(nearbyReq *StopsNearbyRequest) (*LocationList, error) {
-	nearbyReq.key = c.common.apiKeys[keyStopsNearby]
+func (c *Stops) Nearby(req *StopsNearbyRequest) (*LocationList, error) {
+	req.key = c.common.apiKeys[keyStopsNearby]
 	nearbyResp := &LocationList{}
-	if _, err := c.common.doXML(stopsNearbyAPI, nearbyReq, nearbyResp); err != nil {
+	resp, err := c.common.client.Do(
+		requester.WithPath("/api2/nearbystopsv2.xml"),
+		requester.WithQuery(req.params()),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return nearbyResp, nil
+	return nearbyResp, resp.XML(nearbyResp)
 }
 
 type StopsNearbyRequest struct {
@@ -99,7 +94,6 @@ type StopsNearbyRequest struct {
 	Type            string
 }
 
-func (r StopsNearbyRequest) body() (io.Reader, error) { return nil, nil }
 func (r StopsNearbyRequest) params() url.Values {
 	params := url.Values{}
 	if r.key != "" {

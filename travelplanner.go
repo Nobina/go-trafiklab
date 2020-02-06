@@ -2,30 +2,12 @@ package trafiklab
 
 import (
 	"fmt"
-	"io"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
-)
 
-var (
-	travelplannerTripsAPI = &apiConfig{
-		host:   "http://api.sl.se",
-		path:   "/api2/travelplannerv3_1/trip.xml",
-		method: "GET",
-	}
-
-	travelplannerReconstructionAPI = &apiConfig{
-		host:   "http://api.sl.se",
-		path:   "/api2/travelplannerv3_1/reconstruction.xml",
-		method: "GET",
-	}
-
-	travelplannerJourneyDetailAPI = &apiConfig{
-		host:   "http://api.sl.se",
-		path:   "/api2/travelplannerv3_1/journeydetail.xml",
-		method: "GET",
-	}
+	"github.com/nobina/go-requester"
 )
 
 type Travelplanner struct {
@@ -43,14 +25,18 @@ const (
 	ProductRefCommute ProductRef = 128
 )
 
-func (c *Travelplanner) JourneyDetail(journeyDetailReq *JourneyDetailRequest) (*Leg, error) {
-	journeyDetailReq.key = c.common.apiKeys[keyTravelplanner]
+func (c *Travelplanner) JourneyDetail(req *JourneyDetailRequest) (*Leg, error) {
+	req.key = c.common.apiKeys[keyTravelplanner]
 	legResp := &Leg{}
-	if _, err := c.common.doXML(travelplannerJourneyDetailAPI, journeyDetailReq, legResp); err != nil {
+	resp, err := c.common.client.Do(
+		requester.WithPath("/api2/travelplannerv3_1/journeydetail.xml"),
+		requester.WithQuery(req.params()),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return legResp, nil
+	return legResp, resp.XML(legResp)
 }
 
 type JourneyDetailRequest struct {
@@ -59,7 +45,6 @@ type JourneyDetailRequest struct {
 	Poly bool
 }
 
-func (r JourneyDetailRequest) body() (io.Reader, error) { return nil, nil }
 func (r JourneyDetailRequest) params() url.Values {
 	params := url.Values{}
 	if r.key != "" {
@@ -77,42 +62,32 @@ func (r JourneyDetailRequest) params() url.Values {
 
 func (c *Travelplanner) Reconstruction(ctx string) (*TripResp, error) {
 	tripResp := &TripResp{}
-	if _, err := c.common.doXML(travelplannerReconstructionAPI, ReconstructionRequest{
-		key:     c.common.apiKeys[keyTravelplanner],
-		Context: ctx,
-	}, tripResp); err != nil {
+	resp, err := c.common.client.Do(
+		requester.WithPath("/api2/travelplannerv3_1/reconstruction.xml"),
+		requester.WithQuery(url.Values{
+			"key": {c.common.apiKeys[keyTravelplanner]},
+			"ctx": {ctx},
+		}),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return tripResp, nil
+	return tripResp, resp.XML(tripResp)
 }
 
-type ReconstructionRequest struct {
-	key     string
-	Context string
-}
-
-func (r ReconstructionRequest) body() (io.Reader, error) { return nil, nil }
-func (r ReconstructionRequest) params() url.Values {
-	params := url.Values{}
-	if r.key != "" {
-		params.Set("key", r.key)
-	}
-	if r.Context != "" {
-		params.Set("ctx", r.Context)
-	}
-
-	return params
-}
-
-func (c *Travelplanner) Trips(tripsReq *TripsRequest) (*TripsResp, error) {
-	tripsReq.key = c.common.apiKeys[keyTravelplanner]
+func (c *Travelplanner) Trips(req *TripsRequest) (*TripsResp, error) {
+	req.key = c.common.apiKeys[keyTravelplanner]
 	tripsResp := &TripsResp{}
-	if _, err := c.common.doXML(travelplannerTripsAPI, tripsReq, tripsResp); err != nil {
+	resp, err := c.common.client.Do(
+		requester.WithPath("/api2/travelplannerv3_1/trip.xml"),
+		requester.WithQuery(req.params()),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return tripsResp, nil
+	return tripsResp, resp.XML(tripsResp)
 }
 
 type LegContextualFunc func(leg, prevLeg, prevTransportLeg, nextLeg, nextTransportLeg *Leg, i int) error
@@ -173,7 +148,6 @@ type TripsRequest struct {
 	DestWalk          Walk     `json:"dest_walk"`
 }
 
-func (r TripsRequest) body() (io.Reader, error) { return nil, nil }
 func (r TripsRequest) params() url.Values {
 	params := url.Values{}
 	if r.key != "" {
@@ -209,7 +183,7 @@ func (r TripsRequest) params() url.Values {
 		params.Set("destCoordLong", r.DestCoordLong)
 	}
 	if r.Via != nil && len(r.Via) > 0 {
-		// TODO
+		params.Set("via", strings.Join(r.Via, ";"))
 	}
 	if r.ViaID != "" {
 		params.Set("viaId", r.ViaID)
@@ -218,7 +192,7 @@ func (r TripsRequest) params() url.Values {
 		params.Set("viaWaitTime", r.ViaWaitTime)
 	}
 	if r.Avoid != nil && len(r.Avoid) > 0 {
-		// TODO
+		params.Set("avoid", strings.Join(r.Avoid, ";"))
 	}
 	if r.AvoidID != "" {
 		params.Set("avoidId", r.AvoidID)
@@ -254,32 +228,35 @@ func (r TripsRequest) params() url.Values {
 		params.Set("numB", r.NumB)
 	}
 	if r.AvoidProducts != nil && len(r.AvoidProducts) > 0 {
-		// TODO
+		p := ProductRefTrain +
+			ProductRefMetro +
+			ProductRefTram +
+			ProductRefBus +
+			ProductRefBoat +
+			ProductRefCommute
+		for _, product := range r.Products {
+			p -= product
+		}
+		params.Set("products", strconv.Itoa(int(p)))
 	}
 	if r.Products != nil && len(r.Products) > 0 {
 		p := 0
-
 		for _, product := range r.Products {
 			p += int(product)
 		}
-
 		params.Set("products", strconv.Itoa(p))
 	}
 	if r.Lines != nil && len(r.Lines) > 0 {
 		lines := ""
-
 		for i, l := range r.Lines {
 			if l == "" {
 				continue
 			}
-
 			if i != 0 && lines != "" {
 				lines += ","
 			}
-
 			lines += l
 		}
-
 		params.Set("lines", lines)
 	}
 	if r.Context != "" {
@@ -405,46 +382,6 @@ func (trip *Trip) CombineWalks() {
 	trip.Legs = legs
 }
 
-func (trip *Trip) EachLegContextual(fn LegContextualFunc) error {
-	if len(trip.Legs) == 0 {
-		return nil
-	}
-
-	prevLeg := &Leg{}
-	prevTransportLeg := &Leg{}
-	nextLeg := &Leg{}
-	nextTransportLeg := &Leg{}
-	legCount := len(trip.Legs) - 1
-
-	for i, _ := range trip.Legs {
-		leg := &trip.Legs[i]
-
-		if i < legCount {
-			nextLeg = &trip.Legs[i+1]
-			for _, leg := range trip.Legs[i+1:] {
-				if leg.Type != "WALK" {
-					nextTransportLeg = &leg
-					break
-				}
-			}
-		}
-
-		if err := fn(leg, prevLeg, prevTransportLeg, nextLeg, nextTransportLeg, i); err != nil {
-			return err
-		}
-
-		nextLeg = &Leg{}
-		nextTransportLeg = &Leg{}
-		prevLeg = &trip.Legs[i]
-
-		if prevLeg.Type != "WALK" {
-			prevTransportLeg = prevLeg
-		}
-	}
-
-	return nil
-}
-
 type ServiceDay struct {
 	SDaysR              string `json:"s_days_r" xml:"sDaysR,attr"`
 	SDaysI              string `json:"s_days_i" xml:"sDaysI,attr"`
@@ -556,7 +493,25 @@ type Polyline struct {
 	Dim                        string    `json:"dim" xml:"dim,attr"`
 	CoordinatesEncryptedString string    `json:"coordinates_encrypted_string" xml:"crdEncS,attr"`
 	Delta                      bool      `json:"delta,string" xml:"delta,attr"`
-	Coordinates                []float64 `json:"coordinates,string" xml:"crd"`
+	Crd                        []float64 `json:"coordinates,string" xml:"crd"`
+}
+
+func (p Polyline) LatLng() [][]float64 {
+	path := make([][]float64, len(p.Crd)/2)
+	for i, coord := range p.Crd {
+		x := i / 2
+		y := i % 2
+		if y == 0 {
+			path[x] = make([]float64, 2)
+		}
+		if i == 0 {
+			path[x][y] = coord
+		} else {
+			path[x][y] = path[x-1][y] + coord
+		}
+	}
+
+	return path
 }
 
 type Stop struct {

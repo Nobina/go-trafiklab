@@ -1,29 +1,28 @@
 package trafiklab
 
 import (
-	"io"
 	"net/url"
+
+  "github.com/nobina/go-requester"
 )
 
-var departuresAPI = &apiConfig{
-	host:   "http://api.sl.se",
-	path:   "/api2/realtimedeparturesV4.xml",
-	method: "GET",
-}
-
-func (c *Client) Departures(departuresReq *DeparturesRequest) (*DepartureResponse, error) {
-	departuresReq.key = c.apiKeys[keyDepartures]
+func (c *Client) Departures(req *DeparturesRequest) (*DepartureResponse, error) {
+	req.key = c.apiKeys[keyDepartures]
 	departuresResp := &DepartureResponse{}
-	if _, err := c.doXML(departuresAPI, departuresReq, departuresResp); err != nil {
+	resp, err := c.client.Do(
+		requester.WithPath("/api2/realtimedeparturesV4.xml"),
+		requester.WithQuery(req.params()),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return departuresResp, nil
+	return departuresResp, resp.XML(departuresResp)
 }
 
 type DeparturesRequest struct {
-  key string
-  
+	key string
+
 	SiteID     string `json:"site_id"`
 	TimeWindow string `json:"time_window"`
 	Bus        bool   `json:"bus"`
@@ -33,7 +32,6 @@ type DeparturesRequest struct {
 	Ship       bool   `json:"ship"`
 }
 
-func (r DeparturesRequest) body() (io.Reader, error) { return nil, nil }
 func (r DeparturesRequest) params() url.Values {
 	params := url.Values{}
 	if r.key != "" {

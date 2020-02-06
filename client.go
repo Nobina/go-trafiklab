@@ -1,13 +1,11 @@
 package trafiklab
 
 import (
-	"encoding/json"
-	"encoding/xml"
 	"errors"
-	"io"
 	"net/http"
-	"net/url"
 	"time"
+
+	"github.com/nobina/go-requester"
 )
 
 const (
@@ -28,154 +26,69 @@ var (
 )
 
 type Client struct {
-	httpClient *http.Client
-	baseURL    string
-	apiKeys    map[string]string
+	client         *requester.Client
+	clientOptions  []requester.ClientOption
+	defaultOptions []requester.RequestOption
+	apiKeys        map[string]string
 
 	Stops         *Stops
 	Travelplanner *Travelplanner
 }
 
-type ClientOption func(*Client) error
+type ClientOption func(*Client)
 
-type apiConfig struct {
-	host   string
-	path   string
-	method string
-	header map[string]string
-}
-
-type apiRequest interface {
-	params() url.Values
-	body() (io.Reader, error)
-}
-
-func (c *Client) do(config *apiConfig, apiReq apiRequest) (*http.Response, error) {
-	host := config.host
-	if c.baseURL != "" {
-		host = c.baseURL
-	}
-
-	var body io.Reader
-	q := url.Values{}
-
-	if apiReq != nil {
-		q = apiReq.params()
-		if b, err := apiReq.body(); err != nil {
-			return nil, err
-		} else {
-			body = b
-		}
-	}
-
-	req, err := http.NewRequest(config.method, host+config.path, body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.URL.RawQuery = q.Encode()
-
-	if config.header != nil {
-		for k, v := range config.header {
-			req.Header.Set(k, v)
-		}
-	}
-
-	return c.httpClient.Do(req)
-}
-
-func (c *Client) doJSON(config *apiConfig, apiReq apiRequest, v interface{}) (*http.Response, error) {
-	httpResp, err := c.do(config, apiReq)
-	if httpResp != nil && httpResp.Body != nil {
-		defer httpResp.Body.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return httpResp, json.NewDecoder(httpResp.Body).Decode(v)
-}
-
-func (c *Client) doXML(config *apiConfig, apiReq apiRequest, v interface{}) (*http.Response, error) {
-	httpResp, err := c.do(config, apiReq)
-	if httpResp != nil && httpResp.Body != nil {
-		defer httpResp.Body.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return httpResp, xml.NewDecoder(httpResp.Body).Decode(v)
-}
-
-func NewClient(options ...ClientOption) (*Client, error) {
+func NewClient(opts ...ClientOption) *Client {
 	c := &Client{
-		apiKeys: map[string]string{},
+		clientOptions: []requester.ClientOption{
+			requester.WithHTTPClient(http.DefaultClient),
+		},
+		defaultOptions: []requester.RequestOption{
+			requester.WithHost("http://api.sl.se"),
+		},
 	}
 
-	if options != nil {
-		for _, option := range options {
-			if err := option(c); err != nil {
-				return nil, err
-			}
+	if opts != nil {
+		for _, opt := range opts {
+			opt(c)
 		}
 	}
 
-	if c.httpClient == nil {
-		c.httpClient = http.DefaultClient
-	}
-
+	c.clientOptions = append(c.clientOptions, requester.WithDefaultOptions(c.defaultOptions...))
+	c.client = requester.NewClient(c.clientOptions...)
 	c.Stops = &Stops{c}
 	c.Travelplanner = &Travelplanner{c}
 
-	return c, nil
+	return c
 }
 
 func WithHTTPClient(httpClient *http.Client) ClientOption {
-	return func(c *Client) error {
-		c.httpClient = httpClient
-		return nil
-	}
+	return func(c *Client) { c.clientOptions = append(c.clientOptions, requester.WithHTTPClient(httpClient)) }
+}
+
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) { c.defaultOptions = append(c.defaultOptions, requester.WithHost(baseURL)) }
 }
 
 func WithDeparturesAPIKey(apiKey string) ClientOption {
-	return func(c *Client) error {
-		c.apiKeys[keyDepartures] = apiKey
-		return nil
-	}
+	return func(c *Client) { c.apiKeys[keyDepartures] = apiKey }
 }
 
 func WithDeviationsAPIKey(apiKey string) ClientOption {
-	return func(c *Client) error {
-		c.apiKeys[keyDeviations] = apiKey
-		return nil
-	}
+	return func(c *Client) { c.apiKeys[keyDeviations] = apiKey }
 }
 
 func WithStopsNearbyAPIKey(apiKey string) ClientOption {
-	return func(c *Client) error {
-		c.apiKeys[keyStopsNearby] = apiKey
-		return nil
-	}
+	return func(c *Client) { c.apiKeys[keyStopsNearby] = apiKey }
 }
 
 func WithStopsQueryAPIKey(apiKey string) ClientOption {
-	return func(c *Client) error {
-		c.apiKeys[keyStopsQuery] = apiKey
-		return nil
-	}
+	return func(c *Client) { c.apiKeys[keyStopsQuery] = apiKey }
 }
 
 func WithTrafficStatusAPIKey(apiKey string) ClientOption {
-	return func(c *Client) error {
-		c.apiKeys[keyTrafficStatus] = apiKey
-		return nil
-	}
+	return func(c *Client) { c.apiKeys[keyTrafficStatus] = apiKey }
 }
 
 func WithTravelplannerAPIKey(apiKey string) ClientOption {
-	return func(c *Client) error {
-		c.apiKeys[keyTravelplanner] = apiKey
-		return nil
-	}
+	return func(c *Client) { c.apiKeys[keyTravelplanner] = apiKey }
 }

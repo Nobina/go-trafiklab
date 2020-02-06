@@ -1,16 +1,9 @@
 package trafiklab
 
 import (
-	"io"
 	"net/url"
-)
 
-var (
-	trafficStatusAPI = &apiConfig{
-		host:   "http://api.sl.se",
-		path:   "/api2/trafficsituation.xml",
-		method: "GET",
-	}
+	"github.com/nobina/go-requester"
 )
 
 type EventIcon string
@@ -24,26 +17,17 @@ var (
 
 func (c *Client) TrafficStatus() (*TrafficStatusResponse, error) {
 	trafficStatusResp := &TrafficStatusResponse{}
-	if _, err := c.doXML(trafficStatusAPI, trafficStatusRequest{
-		key: c.apiKeys[keyTrafficStatus],
-	}, trafficStatusResp); err != nil {
+	resp, err := c.client.Do(
+		requester.WithPath("/api2/trafficsituation.xml"),
+		requester.WithQuery(url.Values{
+			"key": {c.apiKeys[keyTrafficStatus]},
+		}),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return trafficStatusResp, nil
-}
-
-type trafficStatusRequest struct {
-	key string
-}
-
-func (r trafficStatusRequest) body() (io.Reader, error) { return nil, nil }
-func (r trafficStatusRequest) params() url.Values {
-	params := url.Values{}
-	if r.key != "" {
-		params.Set("key", r.key)
-	}
-	return params
+	return trafficStatusResp, resp.XML(trafficStatusResp)
 }
 
 type TrafficStatusResponse struct {
