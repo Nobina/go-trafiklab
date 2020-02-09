@@ -84,13 +84,13 @@ type Deviation struct {
 }
 
 func (d *Deviation) FromDate() (time.Time, error) {
-	return time.ParseInLocation(time.RFC3339Nano, d.FromDateTime, LocationEuropeStockholm)
+	return time.ParseInLocation("2006-01-02T15:04:05", d.FromDateTime[:19], LocationEuropeStockholm)
 }
 
 func (d *Deviation) ToDate() (time.Time, error) {
-	return time.ParseInLocation(time.RFC3339Nano, d.UpToDateTime, LocationEuropeStockholm)
+	return time.ParseInLocation("2006-01-02T15:04:05", d.UpToDateTime[:19], LocationEuropeStockholm)
 }
 
 func (d *Deviation) UpdatedDate() (time.Time, error) {
-	return time.ParseInLocation(time.RFC3339Nano, d.Updated, LocationEuropeStockholm)
+	return time.ParseInLocation("2006-01-02T15:04:05", d.Updated[:19], LocationEuropeStockholm)
 }
