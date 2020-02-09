@@ -4,14 +4,14 @@ import (
 	"net/url"
 	"time"
 
-  "github.com/nobina/go-requester"
+	"github.com/nobina/go-requester"
 )
 
 func (c *Client) Deviations(req *DeviationsRequest) (*DeviationsResponse, error) {
 	req.key = c.apiKeys[keyDeviations]
-  if req.key == "" {
-    return nil, ErrMissingAPIKey
-  }
+	if req.key == "" {
+		return nil, ErrMissingAPIKey
+	}
 	deviationsResp := &DeviationsResponse{}
 	resp, err := c.client.Do(
 		requester.WithPath("/api2/deviationsrawdata.json"),
@@ -84,13 +84,13 @@ type Deviation struct {
 }
 
 func (d *Deviation) FromDate() (time.Time, error) {
-	return time.ParseInLocation("2006-01-02T15:04:05", d.FromDateTime, LocationEuropeStockholm)
+	return time.ParseInLocation(time.RFC3339Nano, d.FromDateTime, LocationEuropeStockholm)
 }
 
 func (d *Deviation) ToDate() (time.Time, error) {
-	return time.ParseInLocation("2006-01-02T15:04:05", d.UpToDateTime, LocationEuropeStockholm)
+	return time.ParseInLocation(time.RFC3339Nano, d.UpToDateTime, LocationEuropeStockholm)
 }
 
 func (d *Deviation) UpdatedDate() (time.Time, error) {
-	return time.ParseInLocation("2006-01-02T15:04:05", d.Updated, LocationEuropeStockholm)
+	return time.ParseInLocation(time.RFC3339Nano, d.Updated, LocationEuropeStockholm)
 }
