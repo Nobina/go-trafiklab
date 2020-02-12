@@ -513,7 +513,8 @@ func (p Polyline) LatLng() [][]float64 {
 		if y == 0 {
 			path[x] = make([]float64, 2)
 		}
-		if i == 0 {
+
+		if i < 2 {
 			path[x][y] = coord
 		} else {
 			path[x][y] = path[x-1][y] + coord
