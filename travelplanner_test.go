@@ -15,13 +15,23 @@ func TestTravelplannerTripsNoKeys(t *testing.T) {
 }
 
 func TestTravelplannerTrips(t *testing.T) {
-	_, err := client.Travelplanner.Trips(&TripsRequest{
+	resp, err := client.Travelplanner.Trips(&TripsRequest{
 		OriginID: "9192",
 		DestID:   "9306",
+		Poly:     true,
 	})
 	if err != nil {
 		t.Errorf("caught unexpected error, %v", err)
 	}
+
+	for _, trip := range resp.Trips {
+		for _, leg := range trip.Legs {
+			if leg.Polyline != nil {
+				leg.Polyline.LatLng()
+			}
+		}
+	}
+
 }
 
 func TestTravelplannerReconstructionNoKeys(t *testing.T) {
