@@ -39,7 +39,7 @@ const (
 	ProductRefMetro   ProductRef = 2
 	ProductRefTram    ProductRef = 4
 	ProductRefBus     ProductRef = 8
-	ProductRefBoat    ProductRef = 64
+	ProductRefBoat    ProductRef = 96
 	ProductRefCommute ProductRef = 128
 )
 
