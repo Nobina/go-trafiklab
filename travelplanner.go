@@ -345,7 +345,7 @@ type Trip struct {
 	Duration    string        `json:"duration" xml:"duration,attr"`
 	ServiceDays []ServiceDay  `json:"service_days"`
 	Legs        []Leg         `json:"legs" xml:"LegList>Leg"`
-	Tarriff     []FareSetItem `json:"tarriff,omitempty" xml:"TarriffResult>fareSetItem"`
+	Tariff      []FareSetItem `json:"tariff,omitempty" xml:"TariffResult>fareSetItem"`
 }
 
 func (trip *Trip) CombineWalks() {
