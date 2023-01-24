@@ -331,7 +331,7 @@ type LegResp struct {
 }
 
 func (d *TripsResp) CombineWalks() {
-	for ti, _ := range d.Trips {
+	for ti := range d.Trips {
 		d.Trips[ti].CombineWalks()
 	}
 }
@@ -346,6 +346,46 @@ type Trip struct {
 	ServiceDays []ServiceDay  `json:"service_days"`
 	Legs        []Leg         `json:"legs" xml:"LegList>Leg"`
 	Tariff      []FareSetItem `json:"tariff,omitempty" xml:"TariffResult>fareSetItem"`
+}
+
+func (trip *Trip) EachLegContextual(fn LegContextualFunc) error {
+	if len(trip.Legs) == 0 {
+		return nil
+	}
+
+	prevLeg := &Leg{}
+	prevTransportLeg := &Leg{}
+	nextLeg := &Leg{}
+	nextTransportLeg := &Leg{}
+	legCount := len(trip.Legs) - 1
+
+	for i := range trip.Legs {
+		leg := &trip.Legs[i]
+
+		if i < legCount {
+			nextLeg = &trip.Legs[i+1]
+			for _, leg := range trip.Legs[i+1:] {
+				if leg.Type != "WALK" {
+					nextTransportLeg = &leg
+					break
+				}
+			}
+		}
+
+		if err := fn(leg, prevLeg, prevTransportLeg, nextLeg, nextTransportLeg, i); err != nil {
+			return err
+		}
+
+		nextLeg = &Leg{}
+		nextTransportLeg = &Leg{}
+		prevLeg = &trip.Legs[i]
+
+		if prevLeg.Type != "WALK" {
+			prevTransportLeg = prevLeg
+		}
+	}
+
+	return nil
 }
 
 func (trip *Trip) CombineWalks() {
