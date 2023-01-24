@@ -48,10 +48,8 @@ func NewClient(opts ...ClientOption) *Client {
 		apiKeys: map[string]string{},
 	}
 
-	if opts != nil {
-		for _, opt := range opts {
-			opt(c)
-		}
+	for _, opt := range opts {
+		opt(c)
 	}
 
 	c.clientOptions = append(c.clientOptions, requester.WithDefaultOptions(c.defaultOptions...))
