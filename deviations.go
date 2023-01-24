@@ -75,7 +75,7 @@ type Deviation struct {
 	Header                  string `json:"Header"`
 	Details                 string `json:"Details"`
 	Scope                   string `json:"Scope"`
-	DevCaseGid              int64  `json:DevCaseGid`
+	DevCaseGid              int64  `json:"DevCaseGid"`
 	DevMessageVersionNumber int    `json:"DevMessageVersionNumber"`
 	ScopeElements           string `json:"ScopeElements"`
 	FromDateTime            string `json:"FromDateTime"`
