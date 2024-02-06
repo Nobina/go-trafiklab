@@ -19,9 +19,9 @@ type StopsNearbyClient struct {
 	baseURL    string
 }
 
-func NewStopsNearbyClient(cfg *Config) *StopsNearbyClient {
+func NewStopsNearbyClient(cfg *Config, client *http.Client) *StopsNearbyClient {
 	return &StopsNearbyClient{
-		httpClient: http.DefaultClient,
+		httpClient: client,
 		apiKey:     cfg.APIKey,
 		baseURL:    cfg.BaseURL,
 	}
