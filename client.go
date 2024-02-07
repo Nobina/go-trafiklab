@@ -11,7 +11,6 @@ import (
 const (
 	keyDepartures    = "departures"
 	keyDeviations    = "deviations"
-	keyStopsNearby   = "stops_nearby"
 	keyStopsQuery    = "stops_query"
 	keyTrafficStatus = "traffic_status"
 	keyTravelplanner = "travelplanner"
@@ -74,10 +73,6 @@ func WithDeparturesAPIKey(apiKey string) ClientOption {
 
 func WithDeviationsAPIKey(apiKey string) ClientOption {
 	return func(c *Client) { c.apiKeys[keyDeviations] = apiKey }
-}
-
-func WithStopsNearbyAPIKey(apiKey string) ClientOption {
-	return func(c *Client) { c.apiKeys[keyStopsNearby] = apiKey }
 }
 
 func WithStopsQueryAPIKey(apiKey string) ClientOption {
