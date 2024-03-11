@@ -13,7 +13,6 @@ const (
 	keyDeviations    = "deviations"
 	keyStopsQuery    = "stops_query"
 	keyTrafficStatus = "traffic_status"
-	keyTravelplanner = "travelplanner"
 )
 
 var (
@@ -30,8 +29,7 @@ type Client struct {
 	defaultOptions []requester.RequestOption
 	apiKeys        map[string]string
 
-	Stops         *Stops
-	Travelplanner *Travelplanner
+	Stops *Stops
 }
 
 type ClientOption func(*Client)
@@ -54,7 +52,6 @@ func NewClient(opts ...ClientOption) *Client {
 	c.clientOptions = append(c.clientOptions, requester.WithDefaultOptions(c.defaultOptions...))
 	c.client = requester.NewClient(c.clientOptions...)
 	c.Stops = &Stops{c}
-	c.Travelplanner = &Travelplanner{c}
 
 	return c
 }
@@ -81,8 +78,4 @@ func WithStopsQueryAPIKey(apiKey string) ClientOption {
 
 func WithTrafficStatusAPIKey(apiKey string) ClientOption {
 	return func(c *Client) { c.apiKeys[keyTrafficStatus] = apiKey }
-}
-
-func WithTravelplannerAPIKey(apiKey string) ClientOption {
-	return func(c *Client) { c.apiKeys[keyTravelplanner] = apiKey }
 }

@@ -1,4 +1,4 @@
-package trafiklab
+package stopsnearby
 
 import (
 	"context"

@@ -1,17 +1,55 @@
-package trafiklab
+package travelplanner
 
 import (
+	"context"
+	"encoding/xml"
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/nobina/go-requester"
+	"github.com/nobina/go-trafiklab/timeutils"
 )
 
-type Travelplanner struct {
-	common *Client
+const (
+	travelPlannerPath = "/v1/TravelplannerV3_1"
+)
+
+var (
+	ErrMissingAPIKey  = errors.New("missing api key")
+	ErrMissingBaseURL = errors.New("missing base url")
+)
+
+type TravelPlannerConfig struct {
+	APIKey  string
+	BaseURL string
+}
+
+type TravelPlannerClient struct {
+	httpClient *http.Client
+	apiKey     string
+	baseURL    string
+}
+
+func (tc *TravelPlannerConfig) Valid() error {
+	if tc.APIKey == "" {
+		return ErrMissingAPIKey
+	}
+	if tc.BaseURL == "" {
+		return ErrMissingBaseURL
+	}
+	return nil
+}
+
+func NewTravelplannerClient(cfg *TravelPlannerConfig, client *http.Client) *TravelPlannerClient {
+	return &TravelPlannerClient{
+		httpClient: client,
+		apiKey:     cfg.APIKey,
+		baseURL:    cfg.BaseURL,
+	}
 }
 
 type ProductRef int32
@@ -24,23 +62,6 @@ const (
 	ProductRefBoat    ProductRef = 96
 	ProductRefCommute ProductRef = 128
 )
-
-func (c *Travelplanner) JourneyDetail(req *JourneyDetailRequest) (*Leg, error) {
-	req.key = c.common.apiKeys[keyTravelplanner]
-	if req.key == "" {
-		return nil, ErrMissingAPIKey
-	}
-	legResp := &Leg{}
-	resp, err := c.common.client.Do(
-		requester.WithPath("/api2/travelplannerv3_1/journeydetail.xml"),
-		requester.WithQuery(req.params()),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return legResp, resp.XML(legResp)
-}
 
 type JourneyDetailRequest struct {
 	key  string
@@ -63,40 +84,84 @@ func (r JourneyDetailRequest) params() url.Values {
 	return params
 }
 
-func (c *Travelplanner) Reconstruction(ctx string) (*TripResp, error) {
-	if c.common.apiKeys[keyTravelplanner] == "" {
-		return nil, ErrMissingAPIKey
-	}
-	tripResp := &TripResp{}
-	resp, err := c.common.client.Do(
-		requester.WithPath("/api2/travelplannerv3_1/reconstruction.xml"),
-		requester.WithQuery(url.Values{
-			"key": {c.common.apiKeys[keyTravelplanner]},
-			"ctx": {ctx},
-		}),
-	)
+func (c *TravelPlannerClient) JourneyDetail(ctx context.Context, payload *JourneyDetailRequest) (*Leg, error) {
+	payload.key = c.apiKey
+	url := c.baseURL + travelPlannerPath + "/journeydetail.xml"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+	q := payload.params()
+	req.URL.RawQuery = q.Encode()
 
-	return tripResp, resp.XML(tripResp)
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	legResp := &Leg{}
+	err = xml.NewDecoder(resp.Body).Decode(legResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	return legResp, nil
 }
 
-func (c *Travelplanner) Trips(req *TripsRequest) (*TripsResp, error) {
-	req.key = c.common.apiKeys[keyTravelplanner]
-	if req.key == "" {
-		return nil, ErrMissingAPIKey
+func (c *TravelPlannerClient) Reconstruction(ctx context.Context, reconstruction string) (*TripResp, error) {
+	queryValues := url.Values{
+		"key": {c.apiKey},
+		"ctx": {reconstruction},
 	}
-	tripsResp := &TripsResp{}
-	resp, err := c.common.client.Do(
-		requester.WithPath("/api2/travelplannerv3_1/trip.xml"),
-		requester.WithQuery(req.params()),
-	)
+	query := queryValues.Encode()
+
+	url := c.baseURL + travelPlannerPath + "/Reconstruction.xml"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.URL.RawQuery = query
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	tripResp := &TripResp{}
+
+	err = xml.NewDecoder(resp.Body).Decode(tripResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	return tripsResp, resp.XML(tripsResp)
+	return tripResp, nil
+}
+
+func (c *TravelPlannerClient) Trips(ctx context.Context, payload *TripsRequest) (*TripsResp, error) {
+	payload.key = c.apiKey
+
+	url := c.baseURL + travelPlannerPath + "/trip.xml"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.URL.RawQuery = payload.params().Encode()
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	tripsResp := &TripsResp{}
+
+	err = xml.NewDecoder(resp.Body).Decode(tripsResp)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return tripsResp, nil
 }
 
 type LegContextualFunc func(leg, prevLeg, prevTransportLeg, nextLeg, nextTransportLeg *Leg, i int) error
@@ -222,8 +287,8 @@ func (r TripsRequest) params() url.Values {
 		params.Set("maxChange", r.MaxChange)
 	}
 	if r.Time != (time.Time{}) {
-		params.Set("date", r.Time.In(LocationEuropeStockholm).Format("2006-01-02"))
-		params.Set("time", r.Time.In(LocationEuropeStockholm).Format("15:04"))
+		params.Set("date", r.Time.In(timeutils.EuropeStockholm()).Format("2006-01-02"))
+		params.Set("time", r.Time.In(timeutils.EuropeStockholm()).Format("15:04"))
 	}
 	if r.SearchForArrival {
 		params.Set("searchForArrival", "1")
@@ -480,14 +545,14 @@ type Location struct {
 
 func (l Location) ParseTime() (st time.Time, rt time.Time, err error) {
 	if l.Date != "" && l.Time != "" {
-		st, err = time.ParseInLocation("2006-01-02 15:04:05", l.Date+" "+l.Time, LocationEuropeStockholm)
+		st, err = time.ParseInLocation("2006-01-02 15:04:05", l.Date+" "+l.Time, timeutils.EuropeStockholm())
 		if err != nil {
 			return
 		}
 	}
 
 	if l.RtDate != "" && l.RtTime != "" {
-		rt, err = time.ParseInLocation("2006-01-02 15:04:05", l.RtDate+" "+l.RtTime, LocationEuropeStockholm)
+		rt, err = time.ParseInLocation("2006-01-02 15:04:05", l.RtDate+" "+l.RtTime, timeutils.EuropeStockholm())
 		if err != nil {
 			return
 		}
@@ -588,14 +653,14 @@ type Stop struct {
 
 func (s Stop) ParseArrival() (st time.Time, rt time.Time, err error) {
 	if s.ArrivalDate != "" && s.ArrivalTime != "" {
-		st, err = time.ParseInLocation("2006-01-02 15:04:05", s.ArrivalDate+" "+s.ArrivalTime, LocationEuropeStockholm)
+		st, err = time.ParseInLocation("2006-01-02 15:04:05", s.ArrivalDate+" "+s.ArrivalTime, timeutils.EuropeStockholm())
 		if err != nil {
 			return
 		}
 	}
 
 	if s.RtArrivalDate != "" && s.RtArrivalTime != "" {
-		rt, err = time.ParseInLocation("2006-01-02 15:04:05", s.RtArrivalDate+" "+s.RtArrivalTime, LocationEuropeStockholm)
+		rt, err = time.ParseInLocation("2006-01-02 15:04:05", s.RtArrivalDate+" "+s.RtArrivalTime, timeutils.EuropeStockholm())
 		if err != nil {
 			return
 		}
@@ -610,14 +675,14 @@ func (s Stop) ParseArrival() (st time.Time, rt time.Time, err error) {
 
 func (s Stop) ParseDeparture() (st time.Time, rt time.Time, err error) {
 	if s.DepartureDate != "" && s.DepartureTime != "" {
-		st, err = time.ParseInLocation("2006-01-02 15:04:05", s.DepartureDate+" "+s.DepartureTime, LocationEuropeStockholm)
+		st, err = time.ParseInLocation("2006-01-02 15:04:05", s.DepartureDate+" "+s.DepartureTime, timeutils.EuropeStockholm())
 		if err != nil {
 			return
 		}
 	}
 
 	if s.RtDepartureDate != "" && s.RtDepartureTime != "" {
-		rt, err = time.ParseInLocation("2006-01-02 15:04:05", s.RtDepartureDate+" "+s.RtDepartureTime, LocationEuropeStockholm)
+		rt, err = time.ParseInLocation("2006-01-02 15:04:05", s.RtDepartureDate+" "+s.RtDepartureTime, timeutils.EuropeStockholm())
 		if err != nil {
 			return
 		}

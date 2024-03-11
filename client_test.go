@@ -12,13 +12,12 @@ var (
 )
 
 func TestMain(m *testing.M) {
-  client = NewClient(
+	client = NewClient(
 		WithHTTPClient(http.DefaultClient),
 		WithDeparturesAPIKey(os.Getenv("TRAFIKLAB_DEPARTURES_KEY")),
 		WithDeviationsAPIKey(os.Getenv("TRAFIKLAB_DEVIATIONS_KEY")),
 		WithStopsQueryAPIKey(os.Getenv("TRAFIKLAB_TYPEAHEAD_KEY")),
 		WithTrafficStatusAPIKey(os.Getenv("TRAFIKLAB_TRAFFIC_SITUATION_KEY")),
-		WithTravelplannerAPIKey(os.Getenv("TRAFIKLAB_TRAVEL_PLANNER_KEY")),
 	)
 
 	clientNoKeys = NewClient(
@@ -27,7 +26,6 @@ func TestMain(m *testing.M) {
 		WithDeviationsAPIKey(""),
 		WithStopsQueryAPIKey(""),
 		WithTrafficStatusAPIKey(""),
-		WithTravelplannerAPIKey(""),
 	)
 	code := m.Run()
 	os.Exit(code)
