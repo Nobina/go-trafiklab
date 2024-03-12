@@ -153,6 +153,11 @@ func (c *TravelPlannerClient) Trips(ctx context.Context, payload *TripsRequest) 
 		return nil, fmt.Errorf("failed request: %w", err)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		url := req.URL.String()
+		query := req.URL.Query().Encode()
+		return nil, fmt.Errorf("failed request: %w, status: %s, code: %d, tried: %s", err, resp.Status, resp.StatusCode, url+"?"+query)
+	}
 
 	tripsResp := &TripsResp{}
 
