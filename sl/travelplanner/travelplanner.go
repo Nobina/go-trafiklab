@@ -161,7 +161,11 @@ func (c *TravelPlannerClient) Trips(ctx context.Context, payload *TripsRequest) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	req.URL.RawQuery = payload.params().Encode()
+	p, err := payload.params()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create query: %w", err)
+	}
+	req.URL.RawQuery = p.Encode()
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -248,7 +252,22 @@ type TripsRequest struct {
 	DestWalk          Walk     `json:"dest_walk"`
 }
 
-func (r TripsRequest) params() url.Values {
+// When SL updated their domain they broke their id system.
+// We now have to have this flaky conversion function until we've updated
+// their other major breaking changes.
+func convertIDToHafas(sid string) (string, error) {
+	id, err := strconv.Atoi(sid)
+	if err != nil {
+		return "", fmt.Errorf("failed to convert id to hafas: %w", err)
+	}
+
+	// Extract the first two digits and the last five digits of the ID
+	firstTwoDigits := id / 100000
+	lastFiveDigits := id % 100000
+	return fmt.Sprintf("3%02d1%05d", firstTwoDigits, lastFiveDigits), nil
+}
+
+func (r TripsRequest) params() (url.Values, error) {
 	params := url.Values{}
 	if r.key != "" {
 		params.Set("key", r.key)
@@ -259,7 +278,11 @@ func (r TripsRequest) params() url.Values {
 		params.Set("lang", r.Lang)
 	}
 	if r.OriginID != "" {
-		params.Set("originId", r.OriginID)
+		hafasID, err := convertIDToHafas(r.OriginID)
+		if err != nil {
+			return nil, err
+		}
+		params.Set("originId", hafasID)
 	}
 	if r.OriginExtID != "" {
 		params.Set("originExtId", r.OriginExtID)
@@ -271,7 +294,11 @@ func (r TripsRequest) params() url.Values {
 		params.Set("originCoordLong", r.OriginCoordLong)
 	}
 	if r.DestID != "" {
-		params.Set("destId", r.DestID)
+		hafasID, err := convertIDToHafas(r.DestID)
+		if err != nil {
+			return nil, err
+		}
+		params.Set("destId", hafasID)
 	}
 	if r.DestExtID != "" {
 		params.Set("destExtId", r.DestExtID)
@@ -283,10 +310,22 @@ func (r TripsRequest) params() url.Values {
 		params.Set("destCoordLong", r.DestCoordLong)
 	}
 	if r.Via != nil && len(r.Via) > 0 {
-		params.Set("via", strings.Join(r.Via, ";"))
+		hafasIDs := []string{}
+		for _, vs := range r.Via {
+			h, err := convertIDToHafas(vs)
+			if err != nil {
+				return nil, err
+			}
+			hafasIDs = append(hafasIDs, h)
+		}
+		params.Set("via", strings.Join(hafasIDs, ";"))
 	}
 	if r.ViaID != "" {
-		params.Set("viaId", r.ViaID)
+		hafasID, err := convertIDToHafas(r.ViaID)
+		if err != nil {
+			return nil, err
+		}
+		params.Set("viaId", hafasID)
 	}
 	if r.ViaWaitTime != "" {
 		params.Set("viaWaitTime", r.ViaWaitTime)
@@ -295,7 +334,11 @@ func (r TripsRequest) params() url.Values {
 		params.Set("avoid", strings.Join(r.Avoid, ";"))
 	}
 	if r.AvoidID != "" {
-		params.Set("avoidId", r.AvoidID)
+		hafasID, err := convertIDToHafas(r.AvoidID)
+		if err != nil {
+			return nil, err
+		}
+		params.Set("avoidId", hafasID)
 	}
 	if r.ChangeTimePercent != "" {
 		params.Set("changeTimePercent", r.ChangeTimePercent)
@@ -394,7 +437,7 @@ func (r TripsRequest) params() url.Values {
 		}
 		params.Set("destWalk", fmt.Sprintf("%v,%v,%v,%v", allow, strconv.Itoa(r.DestWalk.Min), strconv.Itoa(r.DestWalk.Max), linear))
 	}
-	return params
+	return params, nil
 }
 
 type TripResp struct {
