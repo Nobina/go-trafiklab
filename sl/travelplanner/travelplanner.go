@@ -32,6 +32,7 @@ type TravelPlannerClient struct {
 	httpClient *http.Client
 	apiKey     string
 	baseURL    string
+	isDebug    bool
 }
 
 func (tc *TravelPlannerConfig) Valid() error {
@@ -44,12 +45,26 @@ func (tc *TravelPlannerConfig) Valid() error {
 	return nil
 }
 
-func NewTravelplannerClient(cfg *TravelPlannerConfig, client *http.Client) *TravelPlannerClient {
-	return &TravelPlannerClient{
+type Option func(*TravelPlannerClient)
+
+func WithDebug() Option {
+	return func(tc *TravelPlannerClient) {
+		tc.isDebug = true
+	}
+}
+
+func NewTravelplannerClient(cfg *TravelPlannerConfig, client *http.Client, travelPlannerOpts ...Option) *TravelPlannerClient {
+	tc := &TravelPlannerClient{
 		httpClient: client,
 		apiKey:     cfg.APIKey,
 		baseURL:    cfg.BaseURL,
 	}
+
+	for _, opt := range travelPlannerOpts {
+		opt(tc)
+	}
+
+	return tc
 }
 
 type ProductRef int32
@@ -164,6 +179,12 @@ func (c *TravelPlannerClient) Trips(ctx context.Context, payload *TripsRequest) 
 	err = xml.NewDecoder(resp.Body).Decode(tripsResp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if c.isDebug {
+		fmt.Printf("Trips: %+v\n", tripsResp)
+		fmt.Printf("URL: %+v\n", req.URL.String())
+		fmt.Printf("Query: %+v\n", req.URL.Query().Encode())
 	}
 
 	return tripsResp, nil
