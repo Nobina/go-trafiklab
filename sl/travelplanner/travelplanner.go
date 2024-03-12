@@ -186,12 +186,20 @@ func (c *TravelPlannerClient) Trips(ctx context.Context, payload *TripsRequest) 
 	}
 
 	if c.isDebug {
+		url := removeKeyFromQuery(*req.URL)
 		fmt.Printf("Trips: %+v\n", tripsResp)
-		fmt.Printf("URL: %+v\n", req.URL.String())
-		fmt.Printf("Query: %+v\n", req.URL.Query().Encode())
+		fmt.Printf("URL: %s\n", url.String())
+		fmt.Printf("Query: %+v\n", url.Query())
 	}
 
 	return tripsResp, nil
+}
+
+func removeKeyFromQuery(u url.URL) url.URL {
+	q := u.Query()
+	q.Del("key")
+	u.RawQuery = q.Encode()
+	return u
 }
 
 type LegContextualFunc func(leg, prevLeg, prevTransportLeg, nextLeg, nextTransportLeg *Leg, i int) error
