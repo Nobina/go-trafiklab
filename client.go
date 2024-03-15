@@ -28,8 +28,6 @@ type Client struct {
 	clientOptions  []requester.ClientOption
 	defaultOptions []requester.RequestOption
 	apiKeys        map[string]string
-
-	Stops *Stops
 }
 
 type ClientOption func(*Client)
@@ -51,7 +49,6 @@ func NewClient(opts ...ClientOption) *Client {
 
 	c.clientOptions = append(c.clientOptions, requester.WithDefaultOptions(c.defaultOptions...))
 	c.client = requester.NewClient(c.clientOptions...)
-	c.Stops = &Stops{c}
 
 	return c
 }
