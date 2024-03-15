@@ -264,6 +264,9 @@ type TripsRequest struct {
 // We now have to have this flaky conversion function until we've updated
 // their other major breaking changes.
 func convertIDToHafas(sid string) (string, error) {
+	if len(sid) > 7 {
+		return sid, nil
+	}
 	id, err := strconv.Atoi(sid)
 	if err != nil {
 		return "", fmt.Errorf("failed to convert id to hafas: %w", err)
