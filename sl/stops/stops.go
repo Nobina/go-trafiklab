@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-
-	"gopkg.in/DataDog/dd-trace-go.v1/internal/log"
 )
 
 type Config struct {
@@ -58,15 +56,13 @@ func (c *Client) Query(ctx context.Context, payload *StopsQueryRequest) (*Typeah
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		log.Errorf("unexpected status code: %d", res.StatusCode)
-		log.Errorf("response: %v", res)
 		return nil, fmt.Errorf("unexpected status code: %d, response: %v, for url: %s", res.StatusCode, res, url+req.URL.RawQuery)
 	}
 
 	queryResp := &TypeaheadResponse{}
 	err = xml.NewDecoder(res.Body).Decode(queryResp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
+		return nil, fmt.Errorf("failed to decode response: %w, for url: %s", err, url+req.URL.RawQuery)
 	}
 
 	return queryResp, nil
