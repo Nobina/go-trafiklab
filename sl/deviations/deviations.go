@@ -35,7 +35,7 @@ func NewClient(cfg *Config, client *http.Client) *Client {
 	}
 }
 
-func (c *Client) Deviations(ctx context.Context, payload *DeviationsRequest) (*DeviationsResponse, error) {
+func (c *Client) Deviations(ctx context.Context, payload *DeviationsRequest) ([]*DeviationsResponse, error) {
 	url := c.baseURL + "/v1/messages"
 
 	req, err := requests.JSON(ctx, http.MethodGet, url, nil)
@@ -50,7 +50,7 @@ func (c *Client) Deviations(ctx context.Context, payload *DeviationsRequest) (*D
 		return nil, fmt.Errorf("failed request: %w", err)
 	}
 	defer res.Body.Close()
-	deviationsResp := &DeviationsResponse{}
+	deviationsResp := []*DeviationsResponse{}
 
 	err = json.NewDecoder(res.Body).Decode(deviationsResp)
 	if err != nil {
@@ -72,7 +72,7 @@ func (r DeviationsRequest) params() url.Values {
 	params := url.Values{}
 	if len(r.TransportModes) > 0 {
 		for _, v := range r.TransportModes {
-			params.Add("transport_mode", strconv.Itoa(v))
+			params.Add("transport_mode", v)
 		}
 	}
 	if len(r.LineNumbers) > 0 {
