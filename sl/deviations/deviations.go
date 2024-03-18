@@ -61,11 +61,11 @@ func (c *Client) Deviations(ctx context.Context, payload *DeviationsRequest) (*D
 }
 
 type DeviationsRequest struct {
-	Future             bool  `json:"future"`
-	TransportAuthority int   `json:"transport_authority"`
-	LineNumbers        []int `json:"line_number"`
-	TransportModes     []int `json:"transport_mode"`
-	SiteIDs            []int `json:"site_id"`
+	Future             bool     `json:"future"`
+	TransportAuthority int      `json:"transport_authority"`
+	LineNumbers        []int    `json:"line_number"`
+	TransportModes     []string `json:"transport_mode"`
+	SiteIDs            []int    `json:"site_id"`
 }
 
 func (r DeviationsRequest) params() url.Values {
