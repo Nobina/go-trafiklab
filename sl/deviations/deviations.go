@@ -61,24 +61,29 @@ func (c *Client) Deviations(ctx context.Context, payload *DeviationsRequest) (*D
 }
 
 type DeviationsRequest struct {
-	Future             bool   `json:"future"`
-	TransportAuthority int    `json:"transport_authority"`
-	LineNumber         string `json:"line_number"`
-	TransportMode      string `json:"transport_mode"`
-
-	SiteID string `json:"site_id"`
+	Future             bool  `json:"future"`
+	TransportAuthority int   `json:"transport_authority"`
+	LineNumbers        []int `json:"line_number"`
+	TransportModes     []int `json:"transport_mode"`
+	SiteIDs            []int `json:"site_id"`
 }
 
 func (r DeviationsRequest) params() url.Values {
 	params := url.Values{}
-	if r.TransportMode != "" {
-		params.Set("transport_mode", r.TransportMode)
+	if len(r.TransportModes) > 0 {
+		for _, v := range r.TransportModes {
+			params.Add("transport_mode", strconv.Itoa(v))
+		}
 	}
-	if r.LineNumber != "" {
-		params.Set("line", r.LineNumber)
+	if len(r.LineNumbers) > 0 {
+		for _, v := range r.LineNumbers {
+			params.Add("line", strconv.Itoa(v))
+		}
 	}
-	if r.SiteID != "" {
-		params.Set("site", r.SiteID)
+	if len(r.SiteIDs) > 0 {
+		for _, v := range r.SiteIDs {
+			params.Add("site", strconv.Itoa(v))
+		}
 	}
 	if r.Future {
 		params.Set("future", "true")
