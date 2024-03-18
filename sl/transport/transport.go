@@ -79,7 +79,7 @@ func filterTransportTypes(res *DepartureResponse, bus, metro, train, tram, ship 
 	if bus && metro && train && tram && ship {
 		return res
 	}
-	var departures []*Departures
+	var departures []*Departure
 	for _, departure := range res.Departures {
 		transportMode := departure.Line.TransportMode
 		if bus && transportMode == TransportModeBus {
@@ -122,7 +122,7 @@ func (r DeparturesRequest) params() url.Values {
 }
 
 type DepartureResponse struct {
-	Departures     []*Departures     `json:"departures"`
+	Departures     []*Departure      `json:"departures"`
 	StopDeviations []*StopDeviations `json:"stop_deviations"`
 }
 type Journey struct {
@@ -148,25 +148,31 @@ type Line struct {
 	TransportMode string `json:"transport_mode"`
 	GroupOfLines  string `json:"group_of_lines"`
 }
-type Departures struct {
-	Direction     string    `json:"direction"`
-	DirectionCode int       `json:"direction_code"`
-	Via           string    `json:"via"`
-	Destination   string    `json:"destination"`
-	State         string    `json:"state"`
-	Scheduled     string    `json:"scheduled"`
-	Expected      string    `json:"expected"`
-	Display       string    `json:"display"`
-	Journey       Journey   `json:"journey"`
-	StopArea      StopArea  `json:"stop_area"`
-	StopPoint     StopPoint `json:"stop_point"`
-	Line          Line      `json:"line"`
-	Deviations    string    `json:"deviations"`
+type Departure struct {
+	Direction     string               `json:"direction"`
+	DirectionCode int                  `json:"direction_code"`
+	Via           string               `json:"via"`
+	Destination   string               `json:"destination"`
+	State         string               `json:"state"`
+	Scheduled     string               `json:"scheduled"`
+	Expected      string               `json:"expected"`
+	Display       string               `json:"display"`
+	Journey       Journey              `json:"journey"`
+	StopArea      StopArea             `json:"stop_area"`
+	StopPoint     StopPoint            `json:"stop_point"`
+	Line          Line                 `json:"line"`
+	Deviations    []DepartureDeviation `json:"deviations"`
 }
 type StopDeviations struct {
 	Importance  int    `json:"importance"`
 	Consequence string `json:"consequence"`
 	Message     string `json:"message"`
+}
+
+type DepartureDeviation struct {
+	Consequence     string `json:"consequence"`
+	ImportanceLevel int    `json:"importance_level"`
+	Message         string `json:"message"`
 }
 
 // type DepartureResponse struct {
