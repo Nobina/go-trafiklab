@@ -52,7 +52,7 @@ func (c *Client) Deviations(ctx context.Context, payload *DeviationsRequest) ([]
 	defer res.Body.Close()
 	deviationsResp := []*DeviationsResponse{}
 
-	err = json.NewDecoder(res.Body).Decode(deviationsResp)
+	err = json.NewDecoder(res.Body).Decode(&deviationsResp)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
