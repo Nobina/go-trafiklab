@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strconv"
 
@@ -35,12 +37,26 @@ func (cfg *Config) Valid() error {
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
+	isDebug    bool
 }
 
-func NewClient(cfg *Config, client *http.Client) *Client {
-	return &Client{
+func NewClient(cfg *Config, client *http.Client, options ...Option) *Client {
+	c := &Client{
 		httpClient: client,
 		baseURL:    cfg.BaseURL,
+	}
+
+	for _, opt := range options {
+		opt(c)
+	}
+	return c
+}
+
+type Option func(*Client)
+
+func WithDebug() Option {
+	return func(c *Client) {
+		c.isDebug = true
 	}
 }
 
@@ -54,11 +70,24 @@ func (c *Client) Departures(ctx context.Context, payload *DeparturesRequest) (*D
 	q := payload.params()
 	req.URL.RawQuery = q.Encode()
 
+	if c.isDebug {
+		log.Printf("url: %s\n", url+req.URL.RawQuery)
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed request: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if c.isDebug {
+		res, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			log.Printf("failed to dump response: %v", err)
+		} else {
+			log.Printf("response: %s\n", res)
+		}
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d, response: %v, for url: %s", resp.StatusCode, resp, url+req.URL.RawQuery)
