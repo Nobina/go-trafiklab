@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -50,6 +51,11 @@ func (c *Client) Deviations(ctx context.Context, payload *DeviationsRequest) ([]
 		return nil, fmt.Errorf("failed request: %w", err)
 	}
 	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		log.Printf("unexpected status code: %d", res.StatusCode)
+		log.Printf("url: %s\n", url+"?"+req.URL.RawQuery)
+		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	}
 	deviationsResp := []*DeviationsResponse{}
 
 	err = json.NewDecoder(res.Body).Decode(&deviationsResp)
