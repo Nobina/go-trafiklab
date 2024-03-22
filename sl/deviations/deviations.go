@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"time"
@@ -27,12 +28,27 @@ func (cfg *Config) Valid() error {
 type Client struct {
 	httpClient *http.Client
 	baseURL    string
+	isDebug    bool
 }
 
-func NewClient(cfg *Config, client *http.Client) *Client {
-	return &Client{
+func NewClient(cfg *Config, client *http.Client, opts ...Option) *Client {
+	c := &Client{
 		httpClient: client,
 		baseURL:    cfg.BaseURL,
+	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
+}
+
+type Option func(*Client)
+
+func WithDebug() Option {
+	return func(c *Client) {
+		c.isDebug = true
 	}
 }
 
@@ -46,11 +62,22 @@ func (c *Client) Deviations(ctx context.Context, payload *DeviationsRequest) ([]
 	q := payload.params()
 	req.URL.RawQuery = q.Encode()
 
+	if c.isDebug {
+		log.Printf("url: %s\n", url+"?"+req.URL.RawQuery)
+	}
+
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed request: %w", err)
 	}
 	defer res.Body.Close()
+	if c.isDebug {
+		b, err := httputil.DumpResponse(res, true)
+		if err != nil {
+			log.Printf("failed to dump response: %v", err)
+		}
+		log.Printf("%s\n", b)
+	}
 	if res.StatusCode != http.StatusOK {
 		log.Printf("unexpected status code: %d", res.StatusCode)
 		log.Printf("url: %s\n", url+"?"+req.URL.RawQuery)
