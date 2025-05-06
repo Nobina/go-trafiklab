@@ -1,4 +1,4 @@
-package travelplanner
+package journeyplanner
 
 import (
 	"context"
@@ -23,19 +23,19 @@ var (
 	ErrMissingBaseURL = errors.New("missing base url")
 )
 
-type TravelPlannerConfig struct {
+type JourneyPlannerConfig struct {
 	APIKey  string
 	BaseURL string
 }
 
-type TravelPlannerClient struct {
+type JourneyPlannerClient struct {
 	httpClient *http.Client
 	apiKey     string
 	baseURL    string
 	isDebug    bool
 }
 
-func (tc *TravelPlannerConfig) Valid() error {
+func (tc *JourneyPlannerConfig) Valid() error {
 	if tc.APIKey == "" {
 		return ErrMissingAPIKey
 	}
@@ -45,22 +45,22 @@ func (tc *TravelPlannerConfig) Valid() error {
 	return nil
 }
 
-type Option func(*TravelPlannerClient)
+type Option func(*JourneyPlannerClient)
 
 func WithDebug() Option {
-	return func(tc *TravelPlannerClient) {
+	return func(tc *JourneyPlannerClient) {
 		tc.isDebug = true
 	}
 }
 
-func NewTravelplannerClient(cfg *TravelPlannerConfig, client *http.Client, travelPlannerOpts ...Option) *TravelPlannerClient {
-	tc := &TravelPlannerClient{
+func NewJourneyplannerClient(cfg *JourneyPlannerConfig, client *http.Client, journeyPlannerOpts ...Option) *JourneyPlannerClient {
+	tc := &JourneyPlannerClient{
 		httpClient: client,
 		apiKey:     cfg.APIKey,
 		baseURL:    cfg.BaseURL,
 	}
 
-	for _, opt := range travelPlannerOpts {
+	for _, opt := range journeyPlannerOpts {
 		opt(tc)
 	}
 
@@ -99,7 +99,7 @@ func (r JourneyDetailRequest) params() url.Values {
 	return params
 }
 
-func (c *TravelPlannerClient) JourneyDetail(ctx context.Context, payload *JourneyDetailRequest) (*Leg, error) {
+func (c *JourneyPlannerClient) JourneyDetail(ctx context.Context, payload *JourneyDetailRequest) (*Leg, error) {
 	payload.key = c.apiKey
 	url := c.baseURL + travelPlannerPath + "/journeydetail.xml"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -123,7 +123,7 @@ func (c *TravelPlannerClient) JourneyDetail(ctx context.Context, payload *Journe
 	return legResp, nil
 }
 
-func (c *TravelPlannerClient) Reconstruction(ctx context.Context, reconstruction string) (*TripResp, error) {
+func (c *JourneyPlannerClient) Reconstruction(ctx context.Context, reconstruction string) (*TripResp, error) {
 	queryValues := url.Values{
 		"key": {c.apiKey},
 		"ctx": {reconstruction},
@@ -153,7 +153,7 @@ func (c *TravelPlannerClient) Reconstruction(ctx context.Context, reconstruction
 	return tripResp, nil
 }
 
-func (c *TravelPlannerClient) Trips(ctx context.Context, payload *TripsRequest) (*TripsResp, error) {
+func (c *JourneyPlannerClient) Trips(ctx context.Context, payload *TripsRequest) (*TripsResp, error) {
 	payload.key = c.apiKey
 
 	url := c.baseURL + travelPlannerPath + "/trip.xml"
