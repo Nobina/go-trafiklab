@@ -6,6 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/nobina/go-trafiklab/slidentifiers"
+)
+
+const (
+	EFAPrefix = "909100100"
 )
 
 type Config struct {
@@ -48,6 +54,22 @@ func (c *StopsNearbyClient) Nearby(ctx context.Context, body *StopsNearbyRequest
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
+	filtered := []*StopLocation{}
+	for _, stop := range nearbyResp.Data {
+		// convert stop id to global id
+		id := stop.MainMastExtID
+		id, err = slidentifiers.ConvertIDToHafas(id)
+		if err != nil {
+			continue
+		}
+		id, err = slidentifiers.ConvertHafasToEFA(id, EFAPrefix)
+		if err != nil {
+			continue
+		}
+		stop.MainMastExtID = id
+		filtered = append(filtered, stop)
+	}
+	nearbyResp.Data = filtered
 	return nearbyResp, nil
 }
 
@@ -81,7 +103,7 @@ func (r StopsNearbyRequest) params() url.Values {
 
 type LocationList struct {
 	ErrorCode string         `xml:"errorCode,attr"`
-	Data      []StopLocation `xml:"StopLocation"`
+	Data      []*StopLocation `xml:"StopLocation"`
 }
 
 type StopLocation struct {

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nobina/go-trafiklab/slidentifiers"
 	"github.com/nobina/go-trafiklab/timeutils"
 )
 
@@ -260,23 +261,7 @@ type TripsRequest struct {
 	DestWalk          Walk     `json:"dest_walk"`
 }
 
-// When SL updated their domain they broke their id system.
-// We now have to have this flaky conversion function until we've updated
-// their other major breaking changes.
-func convertIDToHafas(sid string) (string, error) {
-	if len(sid) > 7 {
-		return sid, nil
-	}
-	id, err := strconv.Atoi(sid)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert id to hafas: %w", err)
-	}
 
-	// Extract the first two digits and the last five digits of the ID
-	firstTwoDigits := id / 100000
-	lastFiveDigits := id % 100000
-	return fmt.Sprintf("3%02d1%05d", firstTwoDigits, lastFiveDigits), nil
-}
 
 func (r TripsRequest) params() (url.Values, error) {
 	params := url.Values{}
@@ -289,7 +274,7 @@ func (r TripsRequest) params() (url.Values, error) {
 		params.Set("lang", r.Lang)
 	}
 	if r.OriginID != "" {
-		hafasID, err := convertIDToHafas(r.OriginID)
+		hafasID, err := slidentifiers.ConvertIDToHafas(r.OriginID)
 		if err != nil {
 			return nil, err
 		}
@@ -305,7 +290,7 @@ func (r TripsRequest) params() (url.Values, error) {
 		params.Set("originCoordLong", r.OriginCoordLong)
 	}
 	if r.DestID != "" {
-		hafasID, err := convertIDToHafas(r.DestID)
+		hafasID, err := slidentifiers.ConvertIDToHafas(r.DestID)
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +308,7 @@ func (r TripsRequest) params() (url.Values, error) {
 	if r.Via != nil && len(r.Via) > 0 {
 		hafasIDs := []string{}
 		for _, vs := range r.Via {
-			h, err := convertIDToHafas(vs)
+			h, err := slidentifiers.ConvertIDToHafas(vs)
 			if err != nil {
 				return nil, err
 			}
@@ -332,7 +317,7 @@ func (r TripsRequest) params() (url.Values, error) {
 		params.Set("via", strings.Join(hafasIDs, ";"))
 	}
 	if r.ViaID != "" {
-		hafasID, err := convertIDToHafas(r.ViaID)
+		hafasID, err := slidentifiers.ConvertIDToHafas(r.ViaID)
 		if err != nil {
 			return nil, err
 		}
@@ -345,7 +330,7 @@ func (r TripsRequest) params() (url.Values, error) {
 		params.Set("avoid", strings.Join(r.Avoid, ";"))
 	}
 	if r.AvoidID != "" {
-		hafasID, err := convertIDToHafas(r.AvoidID)
+		hafasID, err := slidentifiers.ConvertIDToHafas(r.AvoidID)
 		if err != nil {
 			return nil, err
 		}
