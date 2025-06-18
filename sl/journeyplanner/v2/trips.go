@@ -266,8 +266,10 @@ func (tr *TripsRequest) Valid() error {
 
 func (tr *TripsRequest) toParams() url.Values {
 	params := url.Values{}
-	params.Set("date", tr.At.Format("2006-01-02"))
-	params.Set("time", tr.At.Format("15:04"))
+
+	params.Set("itd_date", tr.At.Format("20060102")) // YYYYMMDD format
+	params.Set("itd_time", tr.At.Format("1504"))     // HHMM format
+
 	params.Set("name_origin", tr.NameOrigin)
 	params.Set("name_destination", tr.NameDestination)
 	params.Set("type_origin", tr.TypeOrigin)
