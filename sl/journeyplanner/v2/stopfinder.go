@@ -20,7 +20,7 @@ const (
 // 	//search string
 // 	// If coord, latitude and longitude in lat,lng format
 // 	// SL wants a more complex format:
-// 	// <x>:<y>:WGS84[dd.ddddd] E.g. “18.013809:59.335104:WGS84[dd.ddddd]"
+// 	// <x>:<y>:WGS84[dd.ddddd] E.g. "18.013809:59.335104:WGS84[dd.ddddd]"
 // 	// We convert a standard lat,lng format to this format
 // 	Name string
 // 	// can be:
@@ -98,6 +98,29 @@ type LatLng struct {
 }
 
 func (ll *LatLng) FromString(s string) error {
+	// Check if string is in Trafiklab format: "lng:lat:WGS84[dd.ddddd]"
+	if strings.Contains(s, "WGS84[dd.ddddd]") {
+		// Remove the WGS84[dd.ddddd] suffix
+		coordPart := strings.TrimSuffix(s, ":WGS84[dd.ddddd]")
+		parts := strings.Split(coordPart, ":")
+		if len(parts) != 2 {
+			return fmt.Errorf("invalid Trafiklab format: %s", s)
+		}
+
+		var err error
+		// In Trafiklab format, longitude comes first, then latitude
+		ll.Longitude, err = strconv.ParseFloat(parts[0], 64)
+		if err != nil {
+			return fmt.Errorf("invalid longitude in Trafiklab format: %w", err)
+		}
+		ll.Latitude, err = strconv.ParseFloat(parts[1], 64)
+		if err != nil {
+			return fmt.Errorf("invalid latitude in Trafiklab format: %w", err)
+		}
+		return nil
+	}
+
+	// Fall back to comma-separated format: "lat,lng"
 	parts := strings.Split(s, ",")
 	if len(parts) != 2 {
 		return fmt.Errorf("invalid lat,lng format: %s", s)
