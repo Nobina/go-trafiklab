@@ -370,6 +370,11 @@ func (tr *TripsRequest) toParams() url.Values {
 	return params
 }
 
+// Convenience function to get the raw query for the trips request
+func (tr *TripsRequest) RawQuery() string {
+	return tr.toParams().Encode()
+}
+
 type TripsResponse struct {
 	// System messages from backend
 	SystemMessages []SystemMessage `json:"systemmessages"`
