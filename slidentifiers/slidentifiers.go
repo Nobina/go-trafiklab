@@ -44,6 +44,31 @@ import (
 	"unicode"
 )
 
+func ConvertEFAtoSiteID(efaID string) (string, error) {
+	// Validate EFA ID format (must be 16 digits)
+	if len(efaID) != 16 {
+		return "", fmt.Errorf("invalid EFA ID %q: must be exactly 16 digits", efaID)
+	}
+
+	// Validate all characters are digits
+	for i, r := range efaID {
+		if !unicode.IsDigit(r) {
+			return "", fmt.Errorf("invalid EFA ID %q: character %d (%q) is not a digit", efaID, i, r)
+		}
+	}
+
+	// Extract the last 6 digits (site ID, zero-padded)
+	siteIDStr := efaID[10:]
+
+	// Convert to integer to remove leading zeros, then back to string
+	siteNumber, err := strconv.Atoi(siteIDStr)
+	if err != nil {
+		return "", fmt.Errorf("extracted site number %q is not numeric: %w", siteIDStr, err)
+	}
+
+	return strconv.Itoa(siteNumber), nil
+}
+
 // ConvertHafasToEFA converts a HAFAS site ID to an EFA Global ID (GID).
 //
 // This function extracts the 7-digit site number from a 9-digit HAFAS ID and combines it
@@ -71,53 +96,53 @@ import (
 //   efaID, err := ConvertHafasToEFA(hafasID, prefix)
 //   // Result: "9091001000004400"
 func ConvertHafasToEFA(hafasID string, prefix string) (string, error) {
-    // 1) Validate HAFAS ID format
-    if len(hafasID) != 9 {
-        return "", fmt.Errorf("invalid HAFAS ID %q: must be exactly 9 digits", hafasID)
-    }
-    if hafasID[0] != '3' {
-        return "", fmt.Errorf("invalid HAFAS ID %q: must start with '3'", hafasID)
-    }
-    for i, r := range hafasID {
-        if !unicode.IsDigit(r) {
-            return "", fmt.Errorf("invalid HAFAS ID %q: character %d (%q) is not a digit", hafasID, i, r)
-        }
-    }
+	// 1) Validate HAFAS ID format
+	if len(hafasID) != 9 {
+		return "", fmt.Errorf("invalid HAFAS ID %q: must be exactly 9 digits", hafasID)
+	}
+	if hafasID[0] != '3' {
+		return "", fmt.Errorf("invalid HAFAS ID %q: must start with '3'", hafasID)
+	}
+	for i, r := range hafasID {
+		if !unicode.IsDigit(r) {
+			return "", fmt.Errorf("invalid HAFAS ID %q: character %d (%q) is not a digit", hafasID, i, r)
+		}
+	}
 
-    // 2) Extract the 7-digit site number from HAFAS ID
-    //    The HAFAS format XFGYEDCBA stores the site number as GFEDCBA
-    //    We need to reorder: positions 2,1,4,5,6,7,8 → GFEDCBA
-    //
-    //    Example: "300104400"
-    //             X=3, F=0, G=0, Y=1, E=0, D=4, C=4, B=0, A=0
-    //             Site number: G(0) + F(0) + E(0) + D(4) + C(4) + B(0) + A(0) = "0004400"
-    extractedSiteNumber := []byte{
-        hafasID[2], // G (position 2)
-        hafasID[1], // F (position 1)
-        hafasID[4], // E (position 4)
-        hafasID[5], // D (position 5)
-        hafasID[6], // C (position 6)
-        hafasID[7], // B (position 7)
-        hafasID[8], // A (position 8)
-    }
+	// 2) Extract the 7-digit site number from HAFAS ID
+	//    The HAFAS format XFGYEDCBA stores the site number as GFEDCBA
+	//    We need to reorder: positions 2,1,4,5,6,7,8 → GFEDCBA
+	//
+	//    Example: "300104400"
+	//             X=3, F=0, G=0, Y=1, E=0, D=4, C=4, B=0, A=0
+	//             Site number: G(0) + F(0) + E(0) + D(4) + C(4) + B(0) + A(0) = "0004400"
+	extractedSiteNumber := []byte{
+		hafasID[2], // G (position 2)
+		hafasID[1], // F (position 1)
+		hafasID[4], // E (position 4)
+		hafasID[5], // D (position 5)
+		hafasID[6], // C (position 6)
+		hafasID[7], // B (position 7)
+		hafasID[8], // A (position 8)
+	}
 
-    // Verify the extracted site number is numeric
-    if _, err := strconv.Atoi(string(extractedSiteNumber)); err != nil {
-        return "", fmt.Errorf("extracted site number %q is not numeric", string(extractedSiteNumber))
-    }
+	// Verify the extracted site number is numeric
+	if _, err := strconv.Atoi(string(extractedSiteNumber)); err != nil {
+		return "", fmt.Errorf("extracted site number %q is not numeric", string(extractedSiteNumber))
+	}
 
-    // 3) Validate EFA prefix format
-    if len(prefix) != 9 {
-        return "", fmt.Errorf("invalid EFA prefix %q: must be exactly 9 digits", prefix)
-    }
-    for i, r := range prefix {
-        if !unicode.IsDigit(r) {
-            return "", fmt.Errorf("invalid EFA prefix %q: character %d (%q) is not a digit", prefix, i, r)
-        }
-    }
+	// 3) Validate EFA prefix format
+	if len(prefix) != 9 {
+		return "", fmt.Errorf("invalid EFA prefix %q: must be exactly 9 digits", prefix)
+	}
+	for i, r := range prefix {
+		if !unicode.IsDigit(r) {
+			return "", fmt.Errorf("invalid EFA prefix %q: character %d (%q) is not a digit", prefix, i, r)
+		}
+	}
 
-    // 4) Combine prefix and site number to create 16-digit EFA GID
-    return prefix + string(extractedSiteNumber), nil
+	// 4) Combine prefix and site number to create 16-digit EFA GID
+	return prefix + string(extractedSiteNumber), nil
 }
 
 // ConvertIDToHafas converts a legacy SL site ID to HAFAS format.

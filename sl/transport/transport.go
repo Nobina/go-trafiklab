@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"github.com/nobina/go-trafiklab/requests"
+	"github.com/nobina/go-trafiklab/slidentifiers"
 )
 
 const (
@@ -61,8 +62,16 @@ func WithDebug() Option {
 }
 
 func (c *Client) Departures(ctx context.Context, payload *DeparturesRequest) (*DepartureResponse, error) {
-	url := fmt.Sprintf("%s/v1/sites/%s/departures", c.baseURL, payload.SiteID)
 
+	var err error
+	fmt.Printf("payload.SiteID: %s\n", payload.SiteID)
+	payload.SiteID, err = slidentifiers.ConvertEFAtoSiteID(payload.SiteID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert site id to old id: %w", err)
+	}
+	fmt.Printf("payload.SiteID: %s\n", payload.SiteID)
+
+	url := fmt.Sprintf("%s/v1/sites/%s/departures", c.baseURL, payload.SiteID)
 	req, err := requests.JSON(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
