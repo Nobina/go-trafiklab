@@ -405,6 +405,8 @@ type Journey struct {
 	Hints []JourneyHint `json:"hints"`
 	// Days of service
 	DaysOfService JourneyDaysOfService `json:"daysOfService"`
+	// If trip is cancelled
+	TripImpossible bool `json:"tripImpossible"`
 }
 
 type JourneyLeg struct {
