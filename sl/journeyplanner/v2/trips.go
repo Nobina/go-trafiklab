@@ -288,6 +288,12 @@ func (tr *TripsRequest) toParams() url.Values {
 	for _, flag := range tr.AvoidMotFlags {
 		params.Set(avoidSaneFlagsToMotFlags[flag], "false")
 	}
+	// set all avoid flags not in the list to true
+	for flag, motFlag := range avoidSaneFlagsToMotFlags {
+		if !slices.Contains(tr.AvoidMotFlags, flag) {
+			params.Set(motFlag, "true")
+		}
+	}
 
 	// Set optional parameters if they are not empty
 	if tr.Language != "" {
