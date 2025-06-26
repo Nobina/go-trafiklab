@@ -25,7 +25,8 @@ type StopsNearbyClient struct {
 	baseURL    string
 }
 
-func NewStopsNearbyClient(cfg *Config, client *http.Client) *StopsNearbyClient {
+// Deprecated
+func NewStopsNearbyClientDeprecated(cfg *Config, client *http.Client) *StopsNearbyClient {
 	return &StopsNearbyClient{
 		httpClient: client,
 		apiKey:     cfg.APIKey,
@@ -33,6 +34,7 @@ func NewStopsNearbyClient(cfg *Config, client *http.Client) *StopsNearbyClient {
 	}
 }
 
+// Deprecated
 func (c *StopsNearbyClient) Nearby(ctx context.Context, body *StopsNearbyRequest) (*LocationList, error) {
 	url := c.baseURL + "/nearbystopsv2.xml"
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)

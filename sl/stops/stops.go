@@ -30,7 +30,8 @@ type Client struct {
 	baseURL    string
 }
 
-func NewClient(cfg *Config, client *http.Client) *Client {
+// Deprecated
+func NewClientDeprecated(cfg *Config, client *http.Client) *Client {
 	return &Client{
 		httpClient: client,
 		apiKey:     cfg.APIKey,
@@ -38,6 +39,7 @@ func NewClient(cfg *Config, client *http.Client) *Client {
 	}
 }
 
+// Deprecated
 func (c *Client) Query(ctx context.Context, payload *StopsQueryRequest) (*TypeaheadResponse, error) {
 	payload.key = c.apiKey
 	url := c.baseURL + "/v1/typeahead.xml"

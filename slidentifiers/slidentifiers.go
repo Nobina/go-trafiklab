@@ -44,6 +44,10 @@ import (
 	"unicode"
 )
 
+const (
+	EFAPrefix = "909100100"
+)
+
 func ConvertEFAtoSiteID(efaID string) (string, error) {
 	// Validate EFA ID format (must be 16 digits)
 	if len(efaID) != 16 {
@@ -67,6 +71,15 @@ func ConvertEFAtoSiteID(efaID string) (string, error) {
 	}
 
 	return strconv.Itoa(siteNumber), nil
+}
+
+// ConvertSiteIDToEFA is a convenience function that converts a site ID to an EFA ID.
+func ConvertSiteIDToEFA(siteID string, prefix string) (string, error) {
+    hafasID, err := ConvertIDToHafas(siteID)
+    if err != nil {
+        return "", err
+    }
+    return ConvertHafasToEFA(hafasID, prefix)
 }
 
 // ConvertHafasToEFA converts a HAFAS site ID to an EFA Global ID (GID).
@@ -188,4 +201,110 @@ func ConvertIDToHafas(sid string) (string, error) {
 	// Build HAFAS ID: "3" + first2digits + "1" (SL authority) + last5digits
 	// Format ensures proper zero-padding: %02d for 2 digits, %05d for 5 digits
 	return fmt.Sprintf("3%02d1%05d", firstTwoDigits, lastFiveDigits), nil
+}
+
+// IsSiteID validates if a string is a valid SL site ID.
+//
+// A valid site ID is:
+//   - A numeric string (all digits)
+//   - Typically 7 digits or fewer (based on conversion logic)
+//   - Can be converted to an integer
+//
+// Parameters:
+//   - id: The ID string to validate
+//
+// Returns:
+//   - true if the string is a valid site ID, false otherwise
+//
+// Examples:
+//   IsSiteID("4400")     → true
+//   IsSiteID("9192")     → true
+//   IsSiteID("abc123")   → false
+//   IsSiteID("")         → false
+func IsSiteID(id string) bool {
+	if id == "" {
+		return false
+	}
+
+	// Validate all characters are digits
+	for _, r := range id {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+
+	// Must be convertible to integer
+	_, err := strconv.Atoi(id)
+	return err == nil
+}
+
+// IsEFAID validates if a string is a valid EFA Global ID (GID).
+//
+// A valid EFA ID is:
+//   - Exactly 16 digits long
+//   - All characters must be digits
+//
+// Parameters:
+//   - id: The ID string to validate
+//
+// Returns:
+//   - true if the string is a valid EFA ID, false otherwise
+//
+// Examples:
+//   IsEFAID("9091001000004400") → true
+//   IsEFAID("909100100000440")  → false (too short)
+//   IsEFAID("909100100000440X") → false (contains non-digit)
+func IsEFAID(id string) bool {
+	// Must be exactly 16 digits
+	if len(id) != 16 {
+		return false
+	}
+
+	// Validate all characters are digits
+	for _, r := range id {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// IsHAFASID validates if a string is a valid HAFAS site ID.
+//
+// A valid HAFAS ID is:
+//   - Exactly 9 digits long
+//   - Must start with '3' (indicates Site type)
+//   - All characters must be digits
+//
+// Parameters:
+//   - id: The ID string to validate
+//
+// Returns:
+//   - true if the string is a valid HAFAS ID, false otherwise
+//
+// Examples:
+//   IsHAFASID("300104400") → true
+//   IsHAFASID("400104400") → false (doesn't start with '3')
+//   IsHAFASID("30010440")  → false (too short)
+//   IsHAFASID("30010440X") → false (contains non-digit)
+func IsHAFASID(id string) bool {
+	// Must be exactly 9 digits
+	if len(id) != 9 {
+		return false
+	}
+
+	// Must start with '3'
+	if id[0] != '3' {
+		return false
+	}
+
+	// Validate all characters are digits
+	for _, r := range id {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+
+	return true
 }

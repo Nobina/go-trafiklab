@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/nobina/go-trafiklab/slidentifiers"
 )
 
 const (
@@ -596,6 +598,29 @@ func (c *Client) Trips(ctx context.Context, tr *TripsRequest) (*TripsResponse, e
 	if err := tr.Valid(); err != nil {
 		return nil, err
 	}
+	// convert old ids to new efa ids
+	fromID := tr.NameOrigin
+	toID := tr.NameDestination
+	if tr.TypeOrigin == stopFinderTypeAny && len(fromID) != 16 {
+		if slidentifiers.IsSiteID(fromID) {
+			var err error
+			fromID, err = slidentifiers.ConvertSiteIDToEFA(fromID, slidentifiers.EFAPrefix)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert site id to efa id: %w", err)
+			}
+		}
+	}
+	if tr.TypeDestination == stopFinderTypeAny && len(toID) != 16 {
+		if slidentifiers.IsSiteID(toID) {
+			var err error
+			toID, err = slidentifiers.ConvertSiteIDToEFA(toID, slidentifiers.EFAPrefix)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert site id to efa id: %w", err)
+			}
+		}
+	}
+	tr.NameOrigin = fromID
+	tr.NameDestination = toID
 
 	url := c.baseURL + "/trips"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
