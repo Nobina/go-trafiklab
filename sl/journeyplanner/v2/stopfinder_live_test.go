@@ -3,7 +3,6 @@ package journeyplanner_test
 import (
 	"context"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/joho/godotenv"
@@ -12,10 +11,8 @@ import (
 
 func TestStopFinder(t *testing.T) {
 	_ = godotenv.Load()
-	apiKey := os.Getenv("SL_API_KEY")
-	//TODO(pb): API key not needed anymore?
 	client := journeyplanner.NewClient(&journeyplanner.JourneyPlannerConfig{
-		APIKey: apiKey,
+		ClientID: "nobina-trafiklab",
 	}, http.DefaultClient)
 
 	ctx := context.Background()

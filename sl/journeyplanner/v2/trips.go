@@ -634,6 +634,7 @@ func (c *Client) Trips(ctx context.Context, tr *TripsRequest) (*TripsResponse, e
 		return nil, err
 	}
 	req.URL.RawQuery = tr.toParams().Encode()
+	c.addDefaultHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

@@ -252,6 +252,7 @@ func (c *Client) StopFinder(ctx context.Context, sfr TrafiklabStopRequester) (*S
 		return nil, err
 	}
 	req.URL.RawQuery = tfr.toParams().Encode()
+	c.addDefaultHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -269,4 +270,8 @@ func (c *Client) StopFinder(ctx context.Context, sfr TrafiklabStopRequester) (*S
 	}
 
 	return &res, nil
+}
+
+func (c *Client) addDefaultHeaders(req *http.Request) {
+	req.Header.Set("X-Correlation-ID", c.clientID)
 }
