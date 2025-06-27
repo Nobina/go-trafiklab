@@ -409,8 +409,6 @@ type Journey struct {
 	RealTimeExplanationIdx string `json:"realtimeExplanationIdx"`
 	// List of legs in the journey
 	Legs []JourneyLeg `json:"legs"`
-	// List of hints for the journey
-	Hints []JourneyHint `json:"hints"`
 	// Days of service
 	DaysOfService JourneyDaysOfService `json:"daysOfService"`
 	// If trip is cancelled
@@ -420,6 +418,8 @@ type Journey struct {
 type JourneyLeg struct {
 	// List of information messages
 	Infos []JourneyInfo `json:"infos"`
+	// List of hints for the journey
+	Hints []LegHint `json:"hints"`
 	// Distance of the leg
 	Distance int `json:"distance"`
 	// Duration of the leg
@@ -545,7 +545,7 @@ type JourneyInfoLink struct {
 	URL string `json:"url"`
 }
 
-type JourneyHint struct {
+type LegHint struct {
 	// Provider code
 	ProviderCode string `json:"providerCode"`
 	// Content of the hint
@@ -635,6 +635,9 @@ func (c *Client) Trips(ctx context.Context, tr *TripsRequest) (*TripsResponse, e
 	}
 	req.URL.RawQuery = tr.toParams().Encode()
 	c.addDefaultHeaders(req)
+	if c.isDebug {
+		fmt.Printf("url: %s\n", req.URL.String())
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
