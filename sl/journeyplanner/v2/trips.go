@@ -24,14 +24,14 @@ const (
 	RouteTypeLeastTime = "leasttime"
 	RouteTypeLeastWalking = "leastwalking"
 
-	AvoidMotFlagCommuterTrain = "commuter_train"
-	AvoidMotFlagMetro = "metro"
-	AvoidMotFlagTramsTrains = "trams_trains"
-	AvoidMotFlagBus = "bus"
-	AvoidMotFlagShipFerry = "ship_ferry"
-	AvoidMotFlagTransitOnDemand = "transit_on_demand"
-	AvoidMotFlagNationalTrain = "national_train"
-	AvoidMotFlagAccessibleBus = "accessible_bus"
+	MotFlagCommuterTrain = "commuter_train"
+	MotFlagMetro = "metro"
+	MotFlagTramsTrains = "trams_trains"
+	MotFlagBus = "bus"
+	MotFlagShipFerry = "ship_ferry"
+	MotFlagTransitOnDemand = "transit_on_demand"
+	MotFlagNationalTrain = "national_train"
+	MotFlagAccessibleBus = "accessible_bus"
 )
 
 type TripsRequest struct {
@@ -62,7 +62,19 @@ type TripsRequest struct {
 	// - mot_10: Include transit on demand area service (anropsstyrd områdestrafik) in trip calculation
 	// - mot_14: Include national train (fjärrtåg) in trip calculation
 	// - mot_19: Include accessible bus (närtrafik) in trip calculation
+	// Deprecated: Use IncludeMotFlags instead
 	AvoidMotFlags []string
+
+	// IncludeMotFlags is a list of mot flags to include in the trip calculation
+	// - mot_0: Include commuter train (pendeltåg) in trip calculation
+	// - mot_2: Include metro (tunnelbana) in trip calculation
+	// - mot_4: Include local train/tram (lokaltåg/spårväg) in trip calculation
+	// - mot_5: Include bus (buss) in trip calculation
+	// - mot_9: Include ship and ferry (båttrafik) in trip calculation
+	// - mot_10: Include transit on demand area service (anropsstyrd områdestrafik) in trip calculation
+	// - mot_14: Include national train (fjärrtåg) in trip calculation
+	// - mot_19: Include accessible bus (närtrafik) in trip calculation
+	IncludeMotFlags []string
 
 	// Language of the session (sv or en)
 	Language string
@@ -136,14 +148,14 @@ var validFlags = map[string]struct{}{
 }
 
 var avoidSaneFlagsToMotFlags = map[string]string{
-	"commuter_train": "incl_mot_0",
-	"metro": "incl_mot_2",
-	"trams_trains": "incl_mot_4",
-	"bus": "incl_mot_5",
-	"ship_ferry": "incl_mot_9",
-	"transit_on_demand": "incl_mot_10",
-	"national_train": "incl_mot_14",
-	"accessible_bus": "incl_mot_19",
+	MotFlagCommuterTrain:	"incl_mot_0",
+	MotFlagMetro: 		  	"incl_mot_2",
+	MotFlagTramsTrains:		"incl_mot_4",
+	MotFlagBus:				"incl_mot_5",
+	MotFlagShipFerry: 		"incl_mot_9",
+	MotFlagTransitOnDemand:	"incl_mot_10",
+	MotFlagNationalTrain:	"incl_mot_14",
+	MotFlagAccessibleBus:	"incl_mot_19",
 }
 
 func (tr *TripsRequest) Valid() error {
@@ -255,13 +267,41 @@ func (tr *TripsRequest) Valid() error {
 			return fmt.Errorf("invalid flag: %s", flag)
 		}
 	}
-
+	if len(tr.AvoidMotFlags) > 0 && len(tr.IncludeMotFlags) > 0 {
+		return errors.New("avoid_mot_flags and include_mot_flags cannot be used together")
+	}
 	// Validate avoid_mot_flags
-	for _, flag := range tr.AvoidMotFlags {
-		if _, ok := avoidSaneFlagsToMotFlags[flag]; !ok {
-			return fmt.Errorf("invalid avoid_mot_flag: %s", flag)
+	if len(tr.AvoidMotFlags) > 0 {
+		for _, flag := range tr.AvoidMotFlags {
+			if _, ok := avoidSaneFlagsToMotFlags[flag]; !ok {
+				return fmt.Errorf("invalid avoid_mot_flag: %s", flag)
+			}
 		}
 	}
+
+	// Validate include_mot_flags
+	if len(tr.IncludeMotFlags) > 0 {
+		for _, flag := range tr.IncludeMotFlags {
+			if _, ok := avoidSaneFlagsToMotFlags[flag]; !ok {
+				return fmt.Errorf("invalid include_mot_flag: %s", flag)
+			}
+		}
+	}
+
+	// If no mot flags are set, set all flags to true
+	if len(tr.IncludeMotFlags) == 0 && len(tr.AvoidMotFlags) == 0 {
+		tr.IncludeMotFlags = []string{
+			MotFlagCommuterTrain,
+			MotFlagNationalTrain,
+			MotFlagTramsTrains,
+			MotFlagMetro,
+			MotFlagBus,
+			MotFlagShipFerry,
+			MotFlagAccessibleBus,
+			MotFlagTransitOnDemand,
+		}
+	}
+
 
 	return nil
 }
