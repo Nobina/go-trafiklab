@@ -139,6 +139,7 @@ var validFlags = map[string]struct{}{
 	"calc_one_direction":                {},
 	"must_excl":                         {},
 	"sel_op":                           {},
+	"sel_line":                         {},
 	"no_alt":                           {},
 	"prefer_incl":                      {},
 	"use_prox_foot_search":             {},
@@ -301,7 +302,6 @@ func (tr *TripsRequest) Valid() error {
 			MotFlagTransitOnDemand,
 		}
 	}
-
 
 	return nil
 }
