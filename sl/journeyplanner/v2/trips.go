@@ -324,14 +324,26 @@ func (tr *TripsRequest) toParams() url.Values {
 		params.Set(flag, "true")
 	}
 
-	// set all avoid flags to mot false
-	for _, flag := range tr.AvoidMotFlags {
-		params.Set(avoidSaneFlagsToMotFlags[flag], "false")
-	}
-	// set all avoid flags not in the list to true
-	for flag, motFlag := range avoidSaneFlagsToMotFlags {
-		if !slices.Contains(tr.AvoidMotFlags, flag) {
-			params.Set(motFlag, "true")
+	// Handle mot flags - either avoid or include logic
+	if len(tr.AvoidMotFlags) > 0 {
+		// Set all avoid flags to false
+		for _, flag := range tr.AvoidMotFlags {
+			params.Set(avoidSaneFlagsToMotFlags[flag], "false")
+		}
+		// Set all flags not in the avoid list to true
+		for flag, motFlag := range avoidSaneFlagsToMotFlags {
+			if !slices.Contains(tr.AvoidMotFlags, flag) {
+				params.Set(motFlag, "true")
+			}
+		}
+	} else if len(tr.IncludeMotFlags) > 0 {
+		// Set all flags to false first
+		for _, motFlag := range avoidSaneFlagsToMotFlags {
+			params.Set(motFlag, "false")
+		}
+		// Then set only the included flags to true
+		for _, flag := range tr.IncludeMotFlags {
+			params.Set(avoidSaneFlagsToMotFlags[flag], "true")
 		}
 	}
 
